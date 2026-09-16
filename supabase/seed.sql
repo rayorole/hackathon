@@ -1,0 +1,1 @@
+-- Seed via npm run db:seed after setting the dedicated project environment.

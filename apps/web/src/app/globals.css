@@ -1,26 +1,112 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+* {
+  box-sizing: border-box;
 }
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  margin: 0;
+  background: #f5f4ef;
+  color: #1c302b;
   font-family: Arial, Helvetica, sans-serif;
+}
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+header {
+  max-width: 730px;
+}
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  font-weight: 700;
+}
+h1 {
+  font-size: clamp(32px, 5vw, 54px);
+  letter-spacing: -0.045em;
+  margin: 20px 0;
+}
+p {
+  line-height: 1.6;
+}
+h2 {
+  font-size: 20px;
+}
+.notice {
+  margin: 28px 0;
+  padding: 18px 22px;
+  background: #e4ebdf;
+  border-left: 4px solid #315d46;
+}
+.notice p {
+  margin: 5px 0;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+button {
+  padding: 11px 15px;
+  border: 1px solid #476252;
+  border-radius: 6px;
+  background: white;
+  color: #1c302b;
+  cursor: pointer;
+  font: inherit;
+}
+button:hover {
+  background: #e9eee7;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #b46c32;
+  outline-offset: 3px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 32px;
+  margin-top: 30px;
+}
+.grid > section {
+  min-width: 0;
+}
+.record {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  width: 100%;
+  margin-bottom: 12px;
+}
+.record span,
+small {
+  color: #56645c;
+}
+blockquote {
+  margin: 16px 0;
+  padding: 16px;
+  border-left: 3px solid #aaa;
+  background: white;
+}
+article {
+  border-top: 1px solid #cbd3c8;
+  margin: 20px 0;
+  padding-top: 12px;
+}
+a {
+  color: #25593e;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 650px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  main {
+    padding: 28px 18px;
+  }
 }
