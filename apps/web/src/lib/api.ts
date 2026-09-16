@@ -1,16 +1,7 @@
-import { createClient } from "./supabase/client";
+import { api } from "./officer-data";
 export async function apiFetch(path: string, init: RequestInit = {}) {
   if (!path.startsWith("/api/")) throw new Error("Invalid API path");
-  const {
-    data: { session },
-  } = await createClient().auth.getSession();
-  if (!session) throw new Error("Niet aangemeld");
-  const headers = new Headers(init.headers);
-  headers.set("Authorization", `Bearer ${session.access_token}`);
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL ?? ""}${path}`,
-    { ...init, headers },
-  );
-  if (!response.ok) throw new Error(`API: ${response.status}`);
-  return response;
+  // Supabase SSR cookies authenticate same-origin Next.js API requests.
+  // The server independently verifies the user and trusted officer role.
+  return api(path, init);
 }
