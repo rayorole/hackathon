@@ -1,6 +1,8 @@
+> **Integration direction, updated 16 September:** Ray continues frontend/page design on `main`. This branch is backend groundwork, not the shared application base. Do not merge the whole scaffold into main or ask Ray to switch to it. Port backend logic selectively behind the existing frontend API/auth boundary. See `docs/integration.md`.
+
 # Jochem — data, evidence and server
 
-Use `codex/data-api` from `origin/codex/team-setup`. Ray can work against fixtures while this slice develops.
+Backend changes intended for integration must be based on current main and preserve Ray’s frontend and auth. Selectively port this prototype’s backend logic; see integration.md.
 
 ## Your files
 

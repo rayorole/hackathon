@@ -1,3 +1,5 @@
+> **Integration direction, updated 16 September:** Ray continues frontend/page design on `main`. This branch is backend groundwork, not the shared application base. Do not merge the whole scaffold into main or ask Ray to switch to it. Port backend logic selectively behind the existing frontend API/auth boundary. See `docs/integration.md`.
+
 # Shared API contract — v1.0.0
 
 Executable source: `packages/contracts/src/index.ts` (Zod schemas + types). No independently invented frontend types. Browser boundary: `apps/web/src/lib/data-client.ts`. IDs are strings; timestamps ISO8601; unknown values null. API responses have no extra data wrapper.

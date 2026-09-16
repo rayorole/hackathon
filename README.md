@@ -1,3 +1,5 @@
+> **Integration direction, updated 16 September:** Ray continues frontend/page design on `main`. This branch is backend groundwork, not the shared application base. Do not merge the whole scaffold into main or ask Ray to switch to it. Port backend logic selectively behind the existing frontend API/auth boundary. See `docs/integration.md`.
+
 # Straatbeeld
 
 PROV-AI Challenge 1 — a Dutch municipal workflow to inspect local business evidence and approve corrections. Team: Jochem (data/server) and Ray (officer UI). Submission deadline: **16 September 2026, 16:30 Europe/Brussels**. Target submission 16:15, feature freeze 15:00. One three-minute YouTube video is mandatory.
@@ -18,17 +20,7 @@ Do not replace an existing `.env.local`; add missing variables manually. Never c
 
 ## Two independent coding sessions
 
-- Ray: branch `codex/officer-ui`, read [Ray's handoff](docs/ray.md).
-- Jochem: branch `codex/data-api`, read [Jochem's handoff](docs/jochem.md).
-- Both: read [AGENTS.md](AGENTS.md), [API contract](docs/api-contract.md) and [status](docs/status.md).
-- Repository base: **`codex/team-setup`**. Jochem explicitly chose this scaffold; the separate scaffold on `main` is preserved but is not the build base. Check out your branch from `origin/codex/team-setup`; push your branch and open a PR. Keep integrations small and integrate through `codex/team-setup`.
-
-```sh
-git fetch origin
-git switch -c codex/officer-ui origin/codex/team-setup
-```
-
-Jochem substitutes `codex/data-api`. If the branch already exists, use `git switch <branch>` rather than creating it again. Use one checkout per person. No force pushes.
+Ray keeps frontend/page design on `main`. Jochem owns backend/data and integrates selectively into main. The setup branch is a working backend prototype with its own test UI; its bootstrap commands are only for that prototype. Do not merge the scaffold wholesale. Read [integration plan](docs/integration.md).
 
 ## Monorepo
 

@@ -1,6 +1,8 @@
+> **Integration direction, updated 16 September:** Ray continues frontend/page design on `main`. This branch is backend groundwork, not the shared application base. Do not merge the whole scaffold into main or ask Ray to switch to it. Port backend logic selectively behind the existing frontend API/auth boundary. See `docs/integration.md`.
+
 # Ray — officer UI
 
-You can start now. Use `codex/officer-ui` from `origin/codex/team-setup`; `npm ci`, copy .env.example if needed, `npm run dev`. Keep default fixture mode so backend progress never blocks you.
+Continue your existing frontend work on main. Your app and page design are retained. The sections below describe product acceptance goals; the prototype client is reference material, not a required replacement for your existing apiFetch client.
 
 ## Your files
 
