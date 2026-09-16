@@ -1,5 +1,9 @@
 # AGENTS.md — KBO Evidence Desk
 
+## Current integration direction (16 September 2026)
+
+The canonical MVP backend is now in `apps/web/src/app/api` and `apps/web/src/server`, with schemas in `packages/contracts`. Same-origin Next.js API + Supabase SSR authentication supersedes the earlier Hono/Drizzle implementation direction below. `apps/api` is retained as an inactive scaffold. UI must conform to canonical contracts. Read `docs/integration-mvp.md` before changing APIs, auth, imports or AI configuration. Preserve Ray’s page design.
+
 Repo context for coding agents and teammates. Derived from the PROV-AI participant guide
 (`agent.md`, snapshot 15 September 2026, 11:43 CEST). Where this file states an event rule it
 cites the source page; where it states a team decision it says so.

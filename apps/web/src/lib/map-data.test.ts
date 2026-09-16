@@ -37,3 +37,17 @@ test("map accepts the core scorer's structured reasons with source, weight and o
   const page = { entries: [{ ...entry, score: { zekerheid: "Hoog", voorstel: "Geen actie", laatsteWaarneming: "2026-09-07", redenen: [{ signal: "website-bereikbaar", uitleg: "Website bereikbaar", punten: 25, bron: "Website", bronUrl: "https://example.org", waargenomenOp: "2026-09-07" }] } }], nextCursor: null };
   assert.equal(mapPageSchema.safeParse(page).success, true);
 });
+
+
+import { createFixtures } from "../../../../packages/contracts/src/fixtures";
+import { toMapEntry } from "./map-data";
+test("canonical dossier adapter preserves parent separation and never invents map confidence", () => {
+ const detail = createFixtures()[0];
+ const mapped = toMapEntry(detail, { [detail.establishment.id]: [4.5, 51.25] });
+ assert.equal(mapped.record.ondernemingsnr, detail.establishment.id);
+ assert.equal(mapped.record.zetelOndernemingsnr, detail.establishment.parentEnterpriseId);
+ assert.equal(mapped.record.naam, detail.establishment.name);
+ assert.equal(mapped.record.longitude, 4.5);
+ assert.equal(mapped.score, null);
+ assert.equal(coordinateState(toMapEntry(detail, {}).record), "missing");
+});

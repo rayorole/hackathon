@@ -4,9 +4,10 @@ import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Search, LocateFixed, RefreshCw, MapPin, X, Building2, Store, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
+import {loadWorkspace} from "@/lib/officer-data";
 import { apiFetch } from "@/lib/api";
 import { mapNl as t, nl } from "@/lib/nl";
-import { mapConfidence, coordinateState, filterMapRecords, inMapBounds, mapPageSchema, municipality, recordAddress, type MapEntry, type MapKind, type MapConfidence, type MapBounds } from "@/lib/map-data";
+import { mapConfidence, coordinateState, filterMapRecords, inMapBounds, toMapEntry, municipality, recordAddress, type MapEntry, type MapKind, type MapConfidence, type MapBounds } from "@/lib/map-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,18 +21,9 @@ const MapCanvas = dynamic(() => import("@/components/evidence-map-canvas"), { ss
 const emptyEntries: MapEntry[] = [];
 
 async function loadMapRecords(signal: AbortSignal): Promise<MapEntry[]> {
-  const entries: MapEntry[] = [];
-  let cursor: string | null = null;
-  const seen = new Set<string>();
-  do {
-    const response = await apiFetch(`/api/kaart${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`, { signal });
-    const page = mapPageSchema.parse(await response.json());
-    entries.push(...page.entries);
-    cursor = page.nextCursor;
-    if (cursor && seen.has(cursor)) throw new Error("Repeated map cursor");
-    if (cursor) seen.add(cursor);
-  } while (cursor);
-  return entries;
+  const [details, response]=await Promise.all([loadWorkspace(),apiFetch("/api/locations",{signal})]);
+  const locations=await response.json();
+  return details.map(detail=>toMapEntry(detail,locations));
 }
 
 export function EvidenceMap() {
