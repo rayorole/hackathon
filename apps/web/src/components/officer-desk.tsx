@@ -1,12 +1,25 @@
-﻿"use client";
+"use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
-import { Search, ArrowRight, MapPin, Download } from "lucide-react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { Search, ArrowRight, Download } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { deskRoutes } from "@/lib/desk-routes";
 import { OfficerSidebar } from "@/components/officer-sidebar";
-import { demoRecords, type DemoRecord } from "@/lib/officer-demo";
-import { deskNl as t, nl, deskSources } from "@/lib/nl";
+import {
+  api,
+  loadWorkspace,
+  toRecord,
+  fieldLabel,
+  type RecordView,
+} from "@/lib/officer-data";
+import type { Detail } from "@straatbeeld/contracts";
+import { deskNl as t, nl } from "@/lib/nl";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,12 +52,6 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
 import {
   SidebarProvider,
   SidebarInset,
@@ -54,9 +61,9 @@ import {
 type Screen = keyof typeof t.nav;
 type Decision = "Bevestigd" | "Afgewezen";
 type Entry = {
-  id: number;
+  id: string;
   when: string;
-  record: DemoRecord;
+  record: RecordView;
   status: Decision;
   reason: string;
   who: string;
@@ -67,13 +74,19 @@ const tones = {
   Middel: "border-amber-200 bg-amber-50 text-amber-800",
   Laag: "border-border bg-muted text-muted-foreground",
 };
-function Confidence({ value }: { value: DemoRecord["zekerheid"] }) {
+function Confidence({ value }: { value: RecordView["zekerheid"] }) {
   return (
     <Badge
       variant="outline"
       className={cn("rounded-md text-[11px] font-medium", tones[value])}
     >
-      {value}
+      {
+        {
+          Hoog: "Onderbouwd",
+          Middel: "Te controleren",
+          Laag: "Onvoldoende bewijs",
+        }[value]
+      }
     </Badge>
   );
 }
@@ -121,7 +134,7 @@ function Nothing({
   );
 }
 
-function useDeskState(officer: string) {
+function useDeskState(officer: string, officerId: string) {
   const pathname = usePathname();
   const router = useRouter();
   const screen =
@@ -132,79 +145,152 @@ function useDeskState(officer: string) {
     if (deskRoutes[next] !== pathname) router.push(deskRoutes[next]);
   };
   const [query, setQuery] = useState("Paalstraat");
-  const [selected, setSelected] = useState<DemoRecord | null>(null);
-  const [decisions, setDecisions] = useState<Record<string, Decision>>({});
-  const [history, setHistory] = useState<Entry[]>([]);
+  const [selected, setSelected] = useState<RecordView | null>(null);
+  const [dossiers, setDossiers] = useState<Detail[]>([]);
+  const [loading, setLoading] = useState(true),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false),
+    [notice, setNotice] = useState("");
+  const [corrected, setCorrected] = useState("");
+  const records = dossiers.map((d) => toRecord(d));
+  const history: Entry[] = dossiers
+    .flatMap((d) =>
+      d.reviews.map((r) => ({
+        id: r.reviewId,
+        when: new Date(r.reviewedAt).toLocaleString("nl-BE"),
+        record: {
+          ...toRecord(d, r.proposalId),
+          voorstel: `${fieldLabel(d.establishment.proposals.find((p) => p.id === r.proposalId)?.field ?? "Wijziging")}: ${r.effectiveValue ?? "afgewezen"}`,
+          bewijs: toRecord(d, r.proposalId).proposalEvidence,
+        },
+        status: (r.decision === "approve"
+          ? "Bevestigd"
+          : "Afgewezen") as Decision,
+        reason: r.note ?? "",
+        who:
+          r.reviewerId === officerId
+            ? officer
+            : (r.reviewerId ?? "Niet vastgelegd (oud record)"),
+        time: r.reviewedAt,
+      })),
+    )
+    .sort((a, b) => b.time.localeCompare(a.time));
+  async function reload() {
+    try {
+      const next = await loadWorkspace();
+      setError("");
+      setDossiers(next);
+      setSelected((old) => {
+        const d = next.find((d) => d.establishment.id === old?.id);
+        return d ? toRecord(d, old?.proposal?.id) : null;
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Laden mislukt.");
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    let active = true;
+    loadWorkspace()
+      .then((next) => {
+        if (active) setDossiers(next);
+      })
+      .catch((e) => {
+        if (active) setError(e instanceof Error ? e.message : "Laden mislukt.");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   const [dialog, setDialog] = useState<Decision | null>(null);
   const [reason, setReason] = useState("");
   const [state, setState] = useState("loading");
-  const rows = demoRecords.filter((r) =>
+  const rows = records.filter((r) =>
     (r.adres + " " + r.naam + " " + r.ondNr + " " + r.vestNr)
       .toLowerCase()
       .includes(query.trim().toLowerCase()),
   );
-  const queue = demoRecords.filter(
-    (r) => r.voorstel !== "Geen actie" && !decisions[r.adres],
+  const queue = dossiers.flatMap((d) =>
+    d.establishment.proposals
+      .filter((p) => p.reviewState === "pending")
+      .map((p) => toRecord(d, p.id)),
   );
-  const streets = [
-    ...new Set(demoRecords.map((r) => r.adres.replace(/ \d+$/, ""))),
-  ]
+  const streets = [...new Set(records.map((r) => r.street))]
     .map((name) => ({
       name,
-      records: demoRecords.filter((r) => r.adres.startsWith(name)).length,
-      open: queue.filter((r) => r.adres.startsWith(name)).length,
+      records: records.filter((r) => r.street === name).length,
+      open: queue.filter((r) => r.street === name).length,
     }))
     .sort((a, b) => b.open - a.open);
-  function openRecord(record: DemoRecord) {
+  function openRecord(record: RecordView) {
     setSelected(record);
     setQuery("");
     setScreen("street");
   }
-  function ask(record: DemoRecord, status: Decision) {
+  function ask(record: RecordView, status: Decision) {
     setSelected(record);
     setReason("");
+    setCorrected(record.proposal?.proposedValue ?? "");
     setDialog(status);
   }
-  function decide() {
-    if (!selected || !dialog) return;
-    const entry: Entry = {
-      id: Date.now(),
-      when: new Date().toLocaleString("nl-BE"),
-      record: structuredClone(selected),
-      status: dialog,
-      reason: reason.trim(),
-      who: officer,
-    };
-    setHistory((h) => [entry, ...h]);
-    setDecisions((d) => ({ ...d, [selected.adres]: dialog }));
-    setDialog(null);
+  async function decide() {
+    if (!selected?.proposal || !dialog || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api("/api/reviews", {
+        method: "POST",
+        body: JSON.stringify({
+          proposalId: selected.proposal.id,
+          expectedRevision: selected.proposal.revision,
+          decision: dialog === "Bevestigd" ? "approve" : "reject",
+          ...(dialog === "Bevestigd" ? { correctedValue: corrected } : {}),
+          note: reason,
+        }),
+      });
+      setDialog(null);
+      await reload();
+      setNotice("Beoordeling opgeslagen.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Opslaan mislukt.");
+    } finally {
+      setBusy(false);
+    }
   }
-  function exportHistory() {
-    const escape = (value: string) =>
-      '"' + value.replace(/^[=+\-@]/, "'$&").replaceAll('"', '""') + '"';
-    const data = [
-      [t.time, t.record, t.change, t.source, t.employee, t.status, t.reason],
-      ...history.map((e) => [
-        e.when,
-        e.record.vestNr,
-        e.record.voorstel,
-        e.record.bewijs.map((b) => b.bron).join("; "),
-        e.who,
-        e.status,
-        e.reason,
-      ]),
-    ];
-    const url = URL.createObjectURL(
-      new Blob(
-        ["﻿" + data.map((row) => row.map(escape).join(",")).join("\r\n")],
-        { type: "text/csv;charset=utf-8" },
-      ),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "demonstratie-historiek.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+  async function refreshSelected() {
+    if (!selected || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const r = await (
+        await api(`/api/establishments/${selected.id}/refresh`, {
+          method: "POST",
+        })
+      ).json();
+      await reload();
+      setNotice(r.messageNl);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Broncontrole mislukt.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function exportHistory() {
+    try {
+      const blob = await (await api("/api/export?municipality=Schoten")).blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "straatbeeld-goedgekeurd.csv";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Export mislukt.");
+    }
   }
   const details = selected && (
     <Panel>
@@ -252,7 +338,16 @@ function useDeskState(officer: string) {
               {b.bron} · {b.datum}
             </p>
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {t.placeholderSource}
+              {b.url && (
+                <a
+                  className="underline"
+                  href={b.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Bron openen
+                </a>
+              )}
             </p>
           </div>
         ))}
@@ -267,13 +362,48 @@ function useDeskState(officer: string) {
       <div className="bg-muted/60 p-4">
         <h4 className="mb-2 text-xs text-muted-foreground">{t.proposal}</h4>
         <p className="text-sm">{selected.voorstelLang}</p>
+        {selected.detail.establishment.proposals.length > 1 && (
+          <select
+            aria-label="Voorstel kiezen"
+            className="my-3 w-full rounded border p-2 text-sm"
+            value={selected.proposal?.id ?? ""}
+            onChange={(e) =>
+              setSelected(toRecord(selected.detail, e.target.value))
+            }
+          >
+            {selected.detail.establishment.proposals.map((p) => (
+              <option key={p.id} value={p.id}>
+                {fieldLabel(p.field)} ·{" "}
+                {p.reviewState === "pending"
+                  ? "open"
+                  : p.reviewState === "approved"
+                    ? "bevestigd"
+                    : "afgewezen"}
+              </option>
+            ))}
+          </select>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-3"
+          disabled={busy}
+          onClick={refreshSelected}
+        >
+          {busy ? "Bezig…" : "Bronnen opnieuw controleren"}
+        </Button>
         <div className="mt-4 flex flex-wrap gap-2">
-          <Button size="sm" onClick={() => ask(selected, "Bevestigd")}>
+          <Button
+            size="sm"
+            disabled={busy || !selected.proposal}
+            onClick={() => ask(selected, "Bevestigd")}
+          >
             {t.confirm}
           </Button>
           <Button
             size="sm"
             variant="outline"
+            disabled={busy || !selected.proposal}
             onClick={() => ask(selected, "Afgewezen")}
           >
             {t.reject}
@@ -283,20 +413,32 @@ function useDeskState(officer: string) {
           </Button>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          {decisions[selected.adres] ?? t.pending}
+          {selected.proposal?.reviewState === "approved"
+            ? "Bevestigd en opgeslagen."
+            : selected.proposal?.reviewState === "rejected"
+              ? "Afgewezen en opgeslagen."
+              : t.pending}
         </p>
       </div>
     </Panel>
   );
 
   return {
+    records,
+    dossiers,
+    loading,
+    error,
+    busy,
+    notice,
+    corrected,
+    setCorrected,
+    reload,
     screen,
     setScreen,
     query,
     setQuery,
     selected,
     setSelected,
-    decisions,
     history,
     dialog,
     setDialog,
@@ -324,15 +466,25 @@ function useDesk() {
 
 export function OfficerDesk({
   officer,
+  officerId,
   defaultOpen,
   children,
 }: {
   officer: string;
+  officerId: string;
   defaultOpen: boolean;
   children: ReactNode;
 }) {
-  const value = useDeskState(officer);
+  const value = useDeskState(officer, officerId);
   const {
+    records,
+    loading,
+    error,
+    busy,
+    notice,
+    corrected,
+    setCorrected,
+    reload,
     screen,
     query,
     setQuery,
@@ -359,7 +511,7 @@ export function OfficerDesk({
         <OfficerSidebar
           officer={officer}
           queueCount={queue.length}
-          recordCount={demoRecords.length}
+          recordCount={records.length}
         />
         <SidebarInset className="min-w-0 bg-muted/25">
           <header className="sticky top-0 z-10 flex min-h-15 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur-sm md:px-6">
@@ -379,7 +531,7 @@ export function OfficerDesk({
               />
             </div>
             <span className="ml-auto hidden whitespace-nowrap text-xs text-muted-foreground lg:block">
-              {rows.length} / {demoRecords.length} {t.records}
+              {rows.length} / {records.length} {t.records}
             </span>
             <Button
               variant="outline"
@@ -427,7 +579,22 @@ export function OfficerDesk({
                 </Button>
               )}
             </div>
-            {children}
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription role="alert">
+                  {error}
+                  <Button variant="outline" size="sm" onClick={reload}>
+                    Opnieuw laden
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+            {notice && (
+              <p role="status" className="text-sm">
+                {notice}
+              </p>
+            )}
+            {loading ? <p role="status">Dossiers laden…</p> : children}
           </main>
         </SidebarInset>
         <Dialog
@@ -453,6 +620,24 @@ export function OfficerDesk({
                 </p>
               </div>
             )}
+            {error && (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
+            {dialog === "Bevestigd" && (
+              <div className="space-y-2">
+                <Label htmlFor="corrected">
+                  Goedgekeurde waarde (aanpasbaar)
+                </Label>
+                <Input
+                  id="corrected"
+                  value={corrected}
+                  onChange={(e) => setCorrected(e.target.value)}
+                  maxLength={2000}
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="reason">{t.reason}</Label>
               <Textarea
@@ -464,7 +649,7 @@ export function OfficerDesk({
             </div>
             <p className="text-xs text-muted-foreground">
               {t.evidence}:{" "}
-              {selected?.bewijs
+              {selected?.proposalEvidence
                 .map((b) => b.bron + " (" + b.datum + ")")
                 .join(" · ")}
             </p>
@@ -472,7 +657,7 @@ export function OfficerDesk({
               <Button variant="outline" onClick={() => setDialog(null)}>
                 {t.cancel}
               </Button>
-              <Button onClick={decide}>
+              <Button disabled={busy} onClick={decide}>
                 {dialog === "Afgewezen" ? t.saveReject : t.saveConfirm}
               </Button>
             </DialogFooter>
@@ -484,15 +669,15 @@ export function OfficerDesk({
 }
 
 export function OverviewView() {
-  const { queue, streets, setQuery, setSelected, setScreen, history } =
+  const { records, queue, streets, setQuery, setSelected, setScreen, history } =
     useDesk();
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          demoRecords.length,
-          demoRecords.filter((r) => r.zekerheid === "Laag").length,
-          demoRecords.filter((r) => r.register === "Ontbreekt").length,
+          records.length,
+          records.filter((r) => r.zekerheid === "Laag").length,
+          records.filter((r) => !r.detail.establishment.parent).length,
           queue.length,
         ].map((count, i) => (
           <Card key={i} className={cn(panel, "gap-1 p-4")}>
@@ -568,8 +753,7 @@ export function OverviewView() {
 }
 
 export function StreetView() {
-  const { selected, rows, setSelected, decisions, setQuery, details } =
-    useDesk();
+  const { selected, rows, setSelected, setQuery, details } = useDesk();
   return (
     <div
       className={cn(
@@ -596,10 +780,8 @@ export function StreetView() {
               <TableBody>
                 {rows.map((r) => (
                   <TableRow
-                    key={r.adres}
-                    data-state={
-                      selected?.adres === r.adres ? "selected" : undefined
-                    }
+                    key={r.proposal?.id ?? r.id}
+                    data-state={selected?.id === r.id ? "selected" : undefined}
                   >
                     <TableCell className="whitespace-nowrap px-3">
                       {r.adres}
@@ -636,7 +818,7 @@ export function StreetView() {
                       <Confidence value={r.zekerheid} />
                     </TableCell>
                     <TableCell className="min-w-36 whitespace-normal text-muted-foreground">
-                      {decisions[r.adres] ?? r.voorstel}
+                      {r.voorstel}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -680,7 +862,7 @@ export function ReviewView() {
         </TableHeader>
         <TableBody>
           {queue.map((r) => (
-            <TableRow key={r.adres}>
+            <TableRow key={r.proposal?.id ?? r.id}>
               <TableCell className="max-w-64 whitespace-normal text-xs font-medium">
                 {r.voorstel}
               </TableCell>
@@ -769,111 +951,113 @@ export function HistoryView() {
 }
 
 export function MapView() {
-  const { openRecord, setScreen } = useDesk();
+  const { records, openRecord, query } = useDesk();
+  const [locations, setLocations] = useState<Record<string, [number, number]>>(
+    {},
+  );
+  const [chosen, setChosen] = useState("");
+  useEffect(() => {
+    api("/api/locations")
+      .then((r) => r.json())
+      .then(setLocations)
+      .catch(() => {});
+  }, []);
+  const valid = records.filter(
+    (r) =>
+      locations[r.id] &&
+      (!query ||
+        `${r.adres} ${r.naam}`.toLowerCase().includes(query.toLowerCase())),
+  );
+  const current = valid.find((r) => r.id === chosen) ?? valid[0],
+    point = current ? locations[current.id] : null;
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[1fr_260px]">
-      <Panel>
-        <div className="relative aspect-[16/10] min-h-72 overflow-hidden bg-background bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-size-[40px_40px]">
-          <Separator className="absolute top-[38%] h-2!" />
-          <Separator
-            orientation="vertical"
-            className="absolute left-[28%] w-2!"
+    <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
+      <Panel title="Adreslocatie uit de VKBO-steekproef">
+        {point ? (
+          <iframe
+            title="OpenStreetMap adreslocatie"
+            className="h-[540px] w-full border-0"
+            src={`https://www.openstreetmap.org/export/embed.html?bbox=${point[0] - 0.008},${point[1] - 0.005},${point[0] + 0.008},${point[1] + 0.005}&layer=mapnik&marker=${point[1]},${point[0]}`}
           />
-          <Separator
-            orientation="vertical"
-            className="absolute left-[66%] w-2!"
-          />
-          <span className="absolute left-[6%] top-[27%] text-[11px] tracking-wider text-muted-foreground">
-            PAALSTRAAT
-          </span>
-          <span className="absolute bottom-[15%] left-[32%] text-[11px] tracking-wider text-muted-foreground">
-            CHURCHILLLAAN
-          </span>
-          {demoRecords.map((r) => (
-            <Tooltip key={r.adres}>
-              <TooltipTrigger
-                render={
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    aria-label={r.adres + " · " + r.naam}
-                    onClick={() => openRecord(r)}
-                    className={cn(
-                      "absolute size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background p-0 shadow-sm",
-                      r.zekerheid === "Hoog"
-                        ? "bg-primary hover:bg-primary/80"
-                        : r.zekerheid === "Middel"
-                          ? "bg-amber-400 hover:bg-amber-300"
-                          : "bg-muted-foreground hover:bg-muted-foreground/80",
-                    )}
-                    style={{ left: r.x + "%", top: r.y + "%" }}
-                  />
-                }
-              />
-              <TooltipContent>
+        ) : (
+          <p className="p-5">Geen bruikbare coördinaten voor deze selectie.</p>
+        )}
+      </Panel>
+      <Panel title={`${valid.length} adressen met coördinaten`}>
+        <div className="max-h-[540px] space-y-3 overflow-auto p-4">
+          <p className="text-xs text-muted-foreground">
+            Broncoördinaten zijn op bereik gecontroleerd, niet ter plaatse
+            geverifieerd. Verdachte punten worden niet getoond.
+          </p>
+          {valid.map((r) => (
+            <div key={r.id} className="border-b pb-3">
+              <button
+                className="text-left text-sm underline"
+                onClick={() => setChosen(r.id)}
+              >
                 {r.adres} · {r.naam}
-              </TooltipContent>
-            </Tooltip>
+              </button>
+              <Button
+                className="mt-2"
+                variant="outline"
+                size="sm"
+                onClick={() => openRecord(r)}
+              >
+                Dossier openen
+              </Button>
+            </div>
           ))}
         </div>
       </Panel>
-      <div className="space-y-4">
-        <Panel title={t.legend}>
-          <div className="space-y-3 p-4">
-            {(["Hoog", "Middel", "Laag"] as const).map((value, i) => (
-              <div key={value} className="flex items-center gap-2 text-xs">
-                <MapPin className="size-3.5" />
-                <span>{[t.high, t.medium, t.low][i]}</span>
-                <Badge variant="outline" className="ml-auto">
-                  {demoRecords.filter((r) => r.zekerheid === value).length}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </Panel>
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          {t.mapNote}
-        </p>
-        <Button variant="outline" onClick={() => setScreen("street")}>
-          {t.toStreet}
-        </Button>
-      </div>
     </div>
   );
 }
 
 export function SourcesView() {
+  const { dossiers } = useDesk();
+  const sources = [
+    ...new Map(
+      dossiers.flatMap((d) => d.sources).map((s) => [s.url, s]),
+    ).values(),
+  ];
   return (
     <div className="grid items-start gap-4 lg:grid-cols-2">
       <Panel title={t.activeTown}>
         <div className="space-y-4 p-4">
           <Label htmlFor="town">{t.region}</Label>
           <Input id="town" readOnly value={t.town} />
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            {t.townNote}
-          </p>
+          <p className="text-xs">{t.townNote}</p>
+          <p className="text-xs">{t.sampleNote}</p>
         </div>
       </Panel>
-      <Panel title={t.nav.sources}>
+      <Panel title="Gekoppelde bronnen">
         <Table>
           <TableBody>
-            {deskSources.map((source) => (
-              <TableRow key={source}>
-                <TableCell className="whitespace-normal px-4 py-3 text-xs">
-                  {source}
+            {sources.map((s) => (
+              <TableRow key={s.url}>
+                <TableCell className="whitespace-normal p-4 text-xs">
+                  <a
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    {s.publisher}
+                  </a>
+                  <p>Opgehaald: {s.retrievedAt.slice(0, 10)}</p>
+                  <p>
+                    Registerpeildatum: {s.registrySnapshotDate ?? "onbekend"}
+                  </p>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="text-[10px]">
-                    {t.sourcePending}
+                  <Badge variant="outline">
+                    {s.kind === "registry" ? "Register" : "Website"}
                   </Badge>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
-        <p className="border-t p-4 text-xs text-muted-foreground">
-          {t.licence}
-        </p>
       </Panel>
     </div>
   );

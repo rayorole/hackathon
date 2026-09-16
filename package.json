@@ -1,16 +1,27 @@
 {
   "name": "kbo-evidence-desk",
   "private": true,
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "packageManager": "npm@11.9.0",
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
+    "dev": "npm run dev -w @kbo/web",
+    "build": "npm run build -w @kbo/web",
+    "lint": "npm run lint -w @kbo/web",
+    "typecheck": "npm run typecheck -w @kbo/web && npm run typecheck -w @straatbeeld/contracts && tsc -p scripts/tsconfig.json",
     "db:push": "npm run db:push -w @kbo/api",
     "ingest": "npm run ingest -w @kbo/api",
-    "enrich": "npm run enrich -w @kbo/api"
+    "enrich": "npm run enrich -w @kbo/api",
+    "test": "tsx --test packages/contracts/tests/*.test.ts",
+    "db:check": "node --env-file=apps/web/.env.local --import tsx scripts/check-supabase.ts",
+    "db:seed": "node --env-file=apps/web/.env.local --import tsx scripts/seed-supabase.ts",
+    "db:import:kbo": "node --env-file=apps/web/.env.local --import tsx scripts/import-kbo.ts",
+    "ai:init-budget": "node --env-file=apps/web/.env.local --import tsx scripts/init-ai-budget.ts",
+    "ai:research": "node --env-file=apps/web/.env.local --import tsx scripts/research-case.ts",
+    "start": "npm run start -w @kbo/web",
+    "check": "npm run typecheck && npm run lint && npm test"
   },
   "devDependencies": {
     "turbo": "^2.5.8",

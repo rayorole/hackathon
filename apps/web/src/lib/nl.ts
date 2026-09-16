@@ -1,4 +1,4 @@
-﻿export const nl = {
+export const nl = {
   title: "KBO Evidence Desk",
   login: "Aanmelden",
   email: "E-mailadres",
@@ -38,13 +38,13 @@ export const uiNl = {
   skip: "Overslaan",
 } as const;
 export const deskNl = {
-  brand: "Vestigingsbeeld",
+  brand: "Straatbeeld",
   subtitle: "Lokale economie",
   municipality: "Gemeente",
   town: "Schoten",
-  demo: "Demonstratie",
+  demo: "Steekproef",
   demoNote:
-    "Voorbeeldgegevens uit het ontwerp. Beslissingen blijven in deze sessie en wijzigen het register niet.",
+    "Gedeeltelijke VKBO-steekproef. Beoordelingen worden opgeslagen; alleen goedgekeurde wijzigingen zijn exporteerbaar. Het officiële register wordt niet gewijzigd.",
   search: "Straat, handelsnaam of ondernemingsnummer",
   searchLabel: "Records zoeken",
   records: "records",
@@ -61,7 +61,7 @@ export const deskNl = {
   titles: {
     overview: "Wat vandaag nazicht vraagt",
     street: "Alle straten",
-    map: "Zekerheid per adres",
+    map: "Adreslocaties",
     review: "Voorstellen ter beoordeling",
     history: "Historiek",
     sources: "Bronnen en gemeente",
@@ -72,31 +72,29 @@ export const deskNl = {
       "Overzicht van het activiteitenbeeld voor Schoten. Niets wordt gepubliceerd zonder uw bevestiging.",
     street:
       "Elk adres met registerstatus, gedateerd bewijs en een zekerheidsmarkering. Open een dossier om het bewijs te bekijken.",
-    map: "Schematische demonstratiekaart uit het ontwerp. Deze punten zijn geen geverifieerde coördinaten.",
+    map: "Adreslocaties uit de aangeleverde steekproef. Gebruik de zoekbalk om te filteren.",
     review:
       "Voorstellen worden pas doorgevoerd na uw bevestiging. Afgewezen voorstellen blijven in de historiek staan, met uw motivering.",
-    history:
-      "Elke demonstratiebeslissing met bron, beslisser en tijdstip. Alleen wijzigingen uit deze sessie.",
-    sources:
-      "Overzicht van de bronnen uit het ontwerp. Er zijn nog geen externe bronkoppelingen actief.",
+    history: "Opgeslagen beslissingen met bron, medewerker en tijdstip.",
+    sources: "Gekoppelde register- en websitebronnen met ophaaldatum.",
     states: "Voorbeelden van laden, lege resultaten en een onbeschikbare bron.",
   },
   stats: [
     "Records in beeld",
     "Te controleren",
-    "Ontbrekende vestigingen",
+    "Ondernemingsdossier ontbreekt",
     "Wachtrij",
   ],
   statNotes: [
-    "Voorbeeldrecords uit het ontwerp",
+    "echte vestigingen uit de steekproef",
     "geen recent bewijs van activiteit",
-    "niet in register op dit adres",
+    "koppeling met onderneming ontbreekt",
     "voorstellen wachten op beoordeling",
   ],
   streetTitle: "Straten met openstaande vragen",
   streetNote: "Gesorteerd op aantal openstaande voorstellen",
   recent: "Recent beoordeeld",
-  recentNote: "Beslissingen uit deze demonstratiesessie",
+  recentNote: "Opgeslagen beoordelingen",
   noHistory: "Nog geen beslissingen",
   noHistoryNote: "Beoordeel een voorstel om de historiek te vullen.",
   columns: [
@@ -104,8 +102,8 @@ export const deskNl = {
     "Onderneming / vestiging",
     "Register",
     "Bewijs van activiteit",
-    "Laatste waarneming",
-    "Zekerheid",
+    "Bron opgehaald",
+    "Activiteitsbeeld",
     "Voorstel",
   ],
   evidence: "Bewijs",
@@ -121,7 +119,7 @@ export const deskNl = {
   legal: "Rechtstoestand onderneming",
   contact: "Contact",
   proposal: "Voorstel",
-  certainty: "Zekerheid",
+  certainty: "Activiteitsbeeld",
   placeholderSource: "Voorbeeldbron — geen verifieerbare link beschikbaar",
   pending:
     "Nog niet beoordeeld. Niets verlaat het systeem zonder uw bevestiging.",
@@ -137,7 +135,7 @@ export const deskNl = {
   confirmTitle: "Wijziging bevestigen",
   rejectTitle: "Voorstel afwijzen",
   dialogNote:
-    "De beslissing en het getoonde bewijs worden in deze demosessie gelogd. Er wordt niets automatisch verzonden.",
+    "Uw beoordeling wordt met uw account en het tijdstip opgeslagen. Alleen goedgekeurde waarden komen in de export.",
   cancel: "Annuleren",
   saveConfirm: "Bevestigen en loggen",
   saveReject: "Afwijzen en loggen",
@@ -157,7 +155,7 @@ export const deskNl = {
   updated: "opgehaald 07-09-2026",
   licence: "Modellicentie Gratis Hergebruik v1.0",
   sampleNote:
-    "De VKBO-steekproef bevat 1.000 records en is niet het volledige register. Deze demo toont ontwerpvoorbeelden.",
+    "De VKBO-steekproef bevat 1.000 records en is niet het volledige register. Lokale activiteit is niet automatisch vastgesteld.",
   loading: "Laden",
   empty: "Leeg",
   error: "Bron faalt",
@@ -173,7 +171,7 @@ export const deskNl = {
   retry: "Opnieuw proberen",
   continue: "Zonder deze bron verdergaan",
   noQueue: "Alle voorstellen zijn beoordeeld",
-  noQueueNote: "Uw beslissingen staan in de historiek van deze sessie.",
+  noQueueNote: "Uw beslissingen staan opgeslagen in de historiek.",
   export: "CSV exporteren",
   open: "open",
 };
@@ -189,7 +187,7 @@ export const deskSources = [
 export const sidebarNl = {
   workspace: "Werkruimte",
   management: "Beheer",
-  demo: "Demonstratie",
+  demo: "Steekproef",
   account: "Mijn account",
   signedIn: "Aangemeld als",
   officer: "Medewerker lokale economie",

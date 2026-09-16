@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: ["@straatbeeld/contracts", "@kbo/core"],
 };
 
 export default nextConfig;
