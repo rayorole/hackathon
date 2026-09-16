@@ -16,7 +16,7 @@ import {
   Minus,
   CircleHelp,
 } from "lucide-react";
-import { phoneNumbers } from "@/lib/phone-numbers";
+import { phoneNumbers, phonePresentation } from "@/lib/phone-numbers";
 import { normalizedField } from "@/lib/review-presentation";
 import { openingHours } from "@/lib/opening-hours";
 import { presentationNl as t } from "@/lib/nl";
@@ -79,14 +79,20 @@ export function FieldValue({
     );
   if (normalizedField(field) === "telephone")
     return (
-      <div className="flex flex-col gap-2">
-        {phoneNumbers(value).map((number) => (
-          <div className="field-value" key={number}>
-            <FieldIcon field={field} className="size-5 shrink-0 text-muted-foreground" />
-            <span className="min-w-0 whitespace-pre-wrap break-words">{number}</span>
-          </div>
-        ))}
-      </div>
+      <ul className="contact-values" aria-label={t.phone}>
+        {phoneNumbers(value).map((number) => {
+          const contact = phonePresentation(number);
+          return (
+            <li className="contact-value" key={number}>
+              <FieldIcon field={field} className="size-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0">
+                <span className="contact-value-label">{t[contact.label]}</span>
+                <span className="contact-value-number">{contact.value}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     );
   if (schedule && !schedule.rows.some((row) => row.periods.includes("Zie brontekst")))
     return (
@@ -101,8 +107,8 @@ export function FieldValue({
           </thead>
           <tbody>
             {schedule.rows.map((row) => (
-              <tr key={row.day}>
-                <th scope="row">{row.day}</th>
+              <tr key={`${row.day}-${row.date ?? "weekly"}`}>
+                <th scope="row">{row.day}{row.date && <span className="hours-date">{row.date}</span>}</th>
                 <td>
                   {row.closed ? (
                     <span className="text-muted-foreground">{t.closed}</span>

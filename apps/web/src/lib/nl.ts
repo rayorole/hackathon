@@ -500,6 +500,9 @@ export const uxNl = {
 } as const;
 
 export const presentationNl = {
+  phone: "Telefoon",
+  mobile: "Mobiel",
+  landline: "Vaste lijn",
   notKnown: "Nog niet bekend",
   notStated: "Niet vermeld",
   hours: "Openingsuren",

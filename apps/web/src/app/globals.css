@@ -725,3 +725,15 @@
 }
 
 .officer-desk [data-collapsible="icon"] .desk-sidebar-header::before, .officer-desk [data-collapsible="icon"] .desk-nav-count { display: none; }
+
+/* Shared contact presentation in proposals, source evidence and history. */
+.contact-values { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.contact-value { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
+.contact-value-label { display: block; font-size: .6875rem; color: var(--muted-foreground); margin-bottom: 3px; }
+.contact-value-number { display: block; font-size: .875rem; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.hours-date { display: block; margin-top: 2px; font-size: .6875rem; font-weight: 400; color: var(--muted-foreground); }
+.detail-review .comparison-grid:has(> .comparison-cell:first-child .unknown-value):has(.hours-display, .contact-values) { grid-template-columns: minmax(0, 1fr); }
+.detail-review .comparison-grid:has(.hours-display, .contact-values) > .comparison-cell:first-child:has(.unknown-value) { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
+.detail-review .comparison-grid:has(.hours-display, .contact-values) > .comparison-cell:first-child:has(.unknown-value) .comparison-label { padding-bottom: 0; }
+.detail-review .comparison-grid:has(.hours-display, .contact-values) > .comparison-cell:first-child:has(.unknown-value) .unknown-value { min-height: 0; font-size: .75rem; }
+.detail-review .comparison-grid:has(> .comparison-cell:first-child .unknown-value):has(.hours-display, .contact-values) > .comparison-cell + .comparison-cell { border-left: 0; border-top: 1px solid var(--border); }
