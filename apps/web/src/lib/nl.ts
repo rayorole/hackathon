@@ -178,6 +178,7 @@ export const deskNl = {
     review: "Wijzigingen",
     history: "Historiek",
     sources: "Over deze gegevens",
+    research: "Onderzoek",
     states: "Toestanden",
   },
   titles: {
@@ -187,6 +188,7 @@ export const deskNl = {
     review: "Voorstellen ter beoordeling",
     history: "Historiek",
     sources: "Bronnen en gemeente",
+    research: "Onderzoek",
     states: "Toestanden",
   },
   descriptions: {
@@ -199,6 +201,7 @@ export const deskNl = {
       "Voorstellen worden pas doorgevoerd na uw bevestiging. Afgewezen voorstellen blijven in de historiek staan, met uw motivering.",
     history: "Opgeslagen beslissingen met bron, medewerker en tijdstip.",
     sources: "Gekoppelde register- en websitebronnen met ophaaldatum.",
+    research: "Onderzoek",
     states: "Voorbeelden van laden, lege resultaten en een onbeschikbare bron.",
   },
   stats: [
@@ -387,6 +390,7 @@ export const uxNl = {
     review: "Wijzigingen controleren",
     history: "Historiek",
     sources: "Over deze gegevens",
+    research: "Onderzoek",
     states: "Voorbeeldtoestanden · ontwikkeling",
   },
   search: "Zoek een zaak of straat",
@@ -465,8 +469,8 @@ export const uxNl = {
   noContact: "Er zijn nog geen goedgekeurde contactgegevens.",
   foundContact: "Contactgegevens gevonden in bronnen",
   sourceOnly: "Brongegeven — niet goedgekeurd",
-  refresh: "Bronnen opnieuw controleren",
-  refreshing: "Bronnen controleren…",
+  refresh: "Hercontrole aanvragen",
+  refreshing: "Hercontrole inplannen…",
   export: "Goedgekeurde wijzigingen exporteren",
   exportNote:
     "Alleen de laatste goedgekeurde wijzigingen staan in dit bestand. Het officiële register verandert niet.",

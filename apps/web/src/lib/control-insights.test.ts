@@ -41,3 +41,12 @@ test("first fetch, absent extraction and different scope never imply changed or 
   d.evidence.push({ ...d.evidence[0], id: "new-evidence", sourceId: "new", scope: "enterprise", observedValue: "new" });
   assert.equal(sourceChanges(d).length, 0);
 });
+
+test("superseded proposals are not prioritized as pending reviews", () => {
+  const detail = createFixtures()[1];
+  const proposal = detail.establishment.proposals[0];
+  proposal.supersededBy = "new-proposal";
+  const priority = controlPriority(detail, proposal.id, now);
+  assert.equal(priority.level, "normal");
+  assert.deepEqual(priority.reasons, []);
+});

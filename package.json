@@ -21,11 +21,14 @@
     "ai:init-budget": "node --env-file=apps/web/.env.local --import tsx scripts/init-ai-budget.ts",
     "ai:research": "node --env-file=apps/web/.env.local --import tsx scripts/research-case.ts",
     "start": "npm run start -w @kbo/web",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "check": "npm run typecheck && npm run lint && npm test",
+    "monitor": "node --env-file=apps/web/.env.local --import tsx scripts/monitor-municipality.ts",
+    "monitor:build": "node scripts/build-cloud-worker.mjs"
   },
   "devDependencies": {
+    "esbuild": "0.28.2",
+    "tsx": "^4.20.6",
     "turbo": "^2.5.8",
-    "typescript": "^5.9.3",
-    "tsx": "^4.20.6"
+    "typescript": "^5.9.3"
   }
 }

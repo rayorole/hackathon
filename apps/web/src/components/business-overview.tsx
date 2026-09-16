@@ -10,7 +10,7 @@ import { Badge } from "./ui/badge";
 export function BusinessOverview({ detail }: { detail: Detail }) {
   const proposals = detail.establishment.proposals;
   const counts = [
-    { state: "pending", label: u.pendingStatus, count: proposals.filter(p => p.reviewState === "pending").length },
+    { state: "pending", label: u.pendingStatus, count: proposals.filter(p => p.reviewState === "pending" && !p.supersededBy).length },
     { state: "approved", label: u.approved, count: proposals.filter(p => p.reviewState === "approved").length },
     { state: "rejected", label: u.rejected, count: proposals.filter(p => p.reviewState === "rejected").length },
   ];

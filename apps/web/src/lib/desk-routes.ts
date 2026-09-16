@@ -3,6 +3,7 @@ export const deskRoutes = {
   street: "/straatbeeld",
   map: "/kaart",
   review: "/nazicht",
+  research: "/onderzoek",
   history: "/historiek",
   sources: "/bronnen",
   states: "/toestanden",

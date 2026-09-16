@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { createHash } from "node:crypto";
-import { detailSchema, type Detail } from "../../packages/contracts/src/index";
+import {
+  acceptedFields,
+  detailSchema,
+  type Detail,
+} from "../../packages/contracts/src/index";
 export const claimSchema = z
   .object({
     sourceId: z.string(),
@@ -62,15 +66,49 @@ export function mergeAnalysis(
     groups.set(c.field, [...(groups.get(c.field) ?? []), e]);
   }
   for (const [field, evidence] of groups) {
-    // Existing human decisions and their evidence linkage are immutable on refresh.
-    if (next.establishment.proposals.some((p) => p.field === field)) continue;
     const values = [...new Set(evidence.map((e) => e.observedValue))];
+    const ids = evidence.map((e) => e.id);
+    const fingerprint = createHash("sha256")
+      .update(ids.slice().sort().join("|"))
+      .digest("hex")
+      .slice(0, 16);
+    const id = `web-proposal:${detail.establishment.id}:${field}:${fingerprint}`;
+    const accepted = acceptedFields(detail).find(
+      (x) => x.proposal.field === field,
+    );
+    if (
+      next.establishment.proposals.some(
+        (p) =>
+          p.id === id ||
+          (p.field === field &&
+            p.evidenceIds.length === ids.length &&
+            ids.every((e) => p.evidenceIds.includes(e))),
+      )
+    )
+      continue;
+    if (
+      accepted &&
+      values.length === 1 &&
+      values[0] === accepted.review.effectiveValue
+    )
+      continue;
+    // Only unreviewed proposals are superseded; historical decisions stay intact.
+    for (const old of next.establishment.proposals)
+      if (
+        old.field === field &&
+        old.reviewState === "pending" &&
+        !old.supersededBy
+      )
+        old.supersededBy = id;
     next.establishment.proposals.push({
-      id: `web-proposal:${detail.establishment.id}:${field}`,
+      id,
+      baselineReviewId: accepted?.review.reviewId ?? null,
       establishmentId: detail.establishment.id,
       field,
-      before:
-        detail.evidence.find((e) => e.field === field)?.observedValue ?? null,
+      before: accepted
+        ? accepted.review.effectiveValue
+        : (detail.evidence.find((e) => e.field === field)?.observedValue ??
+          null),
       proposedValue: evidence[0].observedValue,
       reasonNl:
         values.length > 1
@@ -110,6 +148,12 @@ export function sourceSnippets(text: string) {
   }
   return result;
 }
+export function validFieldValue(field:string,value:string) {
+ if(field==='email')return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+ if(field==='telephone')return /[0-9]/.test(value) && value.replace(/\D/g,'').length>=8 && /^[+0-9().\s/;,-]+$/.test(value);
+ if(field==='openingHours')return /\d{1,2}[:hu]\d{2}|gesloten|closed|ferm[eé]|afspraak|appointment/i.test(value);
+ return true;
+}
 export function groundSelection(documents: SourceDocument[], input: unknown) {
   const parsed = selectionSchema.parse(input),
     seen = new Set<string>();
@@ -119,6 +163,7 @@ export function groundSelection(documents: SourceDocument[], input: unknown) {
         excerpt = doc ? sourceSnippets(doc.text)[c.snippetIndex] : undefined;
       const unique = c.sourceId + ":" + c.field;
       if (
+        !validFieldValue(c.field,c.value) ||
         !excerpt ||
         !normalizedText(excerpt).includes(normalizedText(c.value)) ||
         seen.has(unique)

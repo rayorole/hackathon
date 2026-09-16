@@ -2,7 +2,7 @@ import type { Detail } from "@straatbeeld/contracts";
 import { normalizedField } from "./review-presentation";
 export type PriorityReason = { code: "conflict" | "missing-evidence" | "nonlocal" | "stale" | "unknown-date"; evidenceIds: string[] };
 export function controlPriority(detail: Detail, proposalId: string | undefined, now: string) {
-  const proposal = detail.establishment.proposals.find(p => p.id === proposalId && p.reviewState === "pending");
+  const proposal = detail.establishment.proposals.find(p => p.id === proposalId && p.reviewState === "pending" && !p.supersededBy);
   const reasons: PriorityReason[] = [];
   if (!proposal) return { level: "normal" as const, rank: 0, reasons };
   const evidence = detail.evidence.filter(e => proposal.evidenceIds.includes(e.id) || normalizedField(e.field) === normalizedField(proposal.field));

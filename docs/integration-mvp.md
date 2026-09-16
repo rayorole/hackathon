@@ -12,21 +12,12 @@ The already-applied `straatbeeld_cases` migration is included for reproducibilit
 
 `/register` creates a Supabase account. Email confirmation and a server-managed officer role are required before dossiers become accessible. Unapproved accounts go to `/access-pending`. Configure the actual app URL and `/auth/callback` in Supabase's Auth redirect allowlist. Keep production URL and local test URLs explicit. A project administrator grants officer access to the intended confirmed user; signup cannot self-grant access.
 
-## Production deployment
-
-- Vercel project: `rayoroles-projects/straatbeeld`, production URL `https://straatbeeld.vercel.app`. GitHub `rayorole/hackathon`, production branch `main`, Next.js root directory `apps/web`, Node.js 24, with workspace files outside the root included.
-- Production environment uses the existing Supabase project: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (Vercel Secret), and `DATA_BACKEND=supabase`. Never commit environment files. `.vercelignore` excludes local dependencies, caches, credentials and scratch data from CLI uploads.
-- UI and canonical API routes deploy together. The database and authentication remain hosted on Supabase; the inactive `apps/api` scaffold needs no separate deployment.
-- Required Auth configuration: site URL `https://straatbeeld.vercel.app` and allowed redirect `https://straatbeeld.vercel.app/auth/callback`, preserving existing local URLs. This must be verified in the Supabase dashboard before relying on production registration emails.
-- Paid AI refresh is not configured on Vercel: no OpenAI key or local budget ledger is uploaded. Existing evidence, decisions, exports and missing-business reports use the live database. Enabling paid refresh requires the shared atomic budget described below.
-- Verified after deployment: health endpoint reports Supabase, login and illustration return 200, protected pages redirect to login, and anonymous workspace/candidate API requests return JSON 401. Authenticated workflows require an officer session.
-
 ## Contract and pages
 
 - `GET /api/establishments`: canonical summaries and coverage; municipality/street filters.
 - `GET /api/establishments/:id`: canonical full dossier, evidence, sources, proposals and reviews.
 - `POST /api/reviews`: proposalId, expectedRevision, decision (`approve`/`reject`), optional correctedValue on approval, optional note. Server records reviewerId. Concurrent changes return 409; reload before another decision.
-- `POST /api/establishments/:id/refresh`: bounded source recheck; returns full detail and Dutch status. Only explicitly configured targets currently supported.
+- `POST /api/establishments/:id/refresh`: queues a source recheck for the shared municipal worker; returns full detail and Dutch status. See `docs/municipal-monitoring.md`.
 - `GET /api/export`: current approved values only, with source URLs; no direct register publication.
 - `GET /api/workspace`: authenticated batch of canonical dossiers for the MVP views (current sample 543 real establishments). This intentionally favors one bounded request over hundreds of detail calls; paginate for a larger dataset.
 - `GET /api/locations`: supplied sample coordinates with basic geographic range checks. Coordinates are not field-verified. The map shows the selected address and lets the officer open its dossier; it is not a business-activity heatmap.
@@ -35,13 +26,17 @@ The already-applied `straatbeeld_cases` migration is included for reproducibilit
 
 ## AI budget
 
-All paid refresh calls must use the SAME existing ledger on Jochem's machine (`AI_BUDGET_FILE` in his ignored environment). Do not initialize a second $10 ledger on another laptop. Ray can design without an OpenAI key; live refresh should use the designated backend. The ledger is a local-process deployment design, not a distributed/serverless quota. No hosted multi-instance deployment until the budget reservation is made shared and atomic.
+Paid research uses the shared Supabase budget with atomic reservations and a fixed $50 total cap, including previous local usage. Do not initialize a second budget. Ray needs only the existing Supabase environment for the UI; the hosted research worker is independent of his Vercel account. See `docs/municipal-monitoring.md` for activation status and operator instructions.
 
 ## Verify
 
 `npm test`, `npm run lint -w @kbo/web`, `npm run typecheck -w @kbo/web`, `npm run build -w @kbo/web`.
 
 Browser acceptance: registration → email confirmation → administrator grants officer role → sign-in → real Paalstraat search → source and parent details → select proposal → edit/approve/reject → reload history → approved-only CSV → refresh → sign-out. Unauthorized API calls must return JSON 401/403, not a login HTML document.
+
+## Municipal monitoring branch
+
+`codex/municipal-monitoring` extends this integration with periodic municipality-wide enrollment, research status and versioned proposals. `docs/municipal-monitoring.md` is the current worker/API handoff. Streets remain search filters.
 
 ## Control workflow additions
 

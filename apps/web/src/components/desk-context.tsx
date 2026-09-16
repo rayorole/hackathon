@@ -41,9 +41,13 @@ function useStateForDesk(officer: string, officerId: string) {
   const router = useRouter(),
     pathname = usePathname(),
     params = useSearchParams();
+  const [busy, setBusy] = useState(false);
+  const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
+  const dirty = Object.keys(drafts).length > 0;
   const workspace = useQuery({
     queryKey: ["workspace", officerId],
     queryFn: ({ signal }) => loadWorkspace(signal),
+    refetchInterval: dirty || busy || params.has("zaak") ? false : 15_000,
   });
   const candidateQuery = useQuery({
     queryKey: ["candidates", officerId],
@@ -60,13 +64,10 @@ function useStateForDesk(officer: string, officerId: string) {
         await api(`/api/establishments/${id}/refresh`, { method: "POST" })
       ).json(),
   });
-  const [notice, setNotice] = useState(""),
-    [busy, setBusy] = useState(false);
-  const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
+  const [notice, setNotice] = useState("");
   const [pendingNavigation, setPendingNavigation] = useState<
     (() => void) | null
   >(null);
-  const dirty = Object.keys(drafts).length > 0;
   const screen =
     (Object.keys(deskRoutes) as DeskScreen[]).find(
       (key) => deskRoutes[key] === pathname,
@@ -83,7 +84,7 @@ function useStateForDesk(officer: string, officerId: string) {
   const matchingCandidates = candidates.filter(c => c.status === "approved" && (!street || street === c.address.street) && `${c.name} ${c.address.street} ${c.address.houseNumber}`.toLocaleLowerCase("nl-BE").includes(query.toLocaleLowerCase("nl-BE")));
   const queue = dossiers.flatMap((d) =>
     d.establishment.proposals
-      .filter((p) => p.reviewState === "pending")
+      .filter((p) => p.reviewState === "pending" && !p.supersededBy)
       .map((p) => toRecord(d, p.id)),
   ).sort((a, b) => controlPriority(b.detail, b.proposal?.id, new Date().toISOString()).rank - controlPriority(a.detail, a.proposal?.id, new Date().toISOString()).rank);
   const streets = [...new Set([...records.map((r) => r.street), ...candidates.filter(c => c.status === "approved").map(c => c.address.street)])].sort((a, b) =>

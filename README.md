@@ -17,4 +17,4 @@ npm run check
 npm run build
 ```
 
-The dataset is a partial sample. Human approval is required before export. AI refresh currently supports selected verified source URLs and must use the designated backend's existing shared $10 budget ledger.
+The dataset is a partial sample. Human approval is required before export. Municipal research uses a durable queue and one local periodic worker with the existing shared $10 budget ledger. See [municipal monitoring and team setup](docs/municipal-monitoring.md).

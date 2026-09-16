@@ -1,4 +1,4 @@
-import type { Detail } from "@straatbeeld/contracts";
+import { acceptedFields, type Detail } from "@straatbeeld/contracts";
 
 export const normalizedField = (field: string) =>
   field
@@ -121,14 +121,10 @@ export function approvedChanges(details: Detail[], street = "") {
   return details
     .filter((d) => !street || d.establishment.address.street === street)
     .flatMap((detail) =>
-      detail.establishment.proposals.flatMap((proposal) => {
-        const review = detail.reviews.findLast(
-          (r) => r.proposalId === proposal.id,
-        );
-        return proposal.reviewState === "approved" &&
-          review?.decision === "approve"
-          ? [{ detail, proposal, review }]
-          : [];
-      }),
+      acceptedFields(detail).map(({ proposal, review }) => ({
+        detail,
+        proposal,
+        review,
+      })),
     );
 }

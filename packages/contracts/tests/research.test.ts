@@ -84,10 +84,17 @@ test("refresh preserves reviewed proposals, evidence and history, and deduplicat
   });
   assert.deepEqual(changed.reviews, reviewed.reviews);
   assert.deepEqual(
-    changed.establishment.proposals,
+    changed.establishment.proposals.slice(
+      0,
+      reviewed.establishment.proposals.length,
+    ),
     reviewed.establishment.proposals,
   );
   assert(changed.evidence.some((e) => e.observedValue === "03 999 99 99"));
+  const newProposal = changed.establishment.proposals.at(-1)!;
+  assert.equal(newProposal.before, "03 123 45 67");
+  assert.equal(newProposal.baselineReviewId, "review");
+  assert.equal(newProposal.reviewState, "pending");
 });
 test("persistent budget reserves before calls, retains uncertain spend and blocks beyond $10", async () => {
   const dir = await mkdtemp(join(tmpdir(), "straatbeeld-budget-")),

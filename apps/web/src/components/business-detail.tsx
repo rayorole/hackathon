@@ -112,9 +112,7 @@ export function Evidence({
                   : item.value || item.excerpt
               }
             />
-            {item.value && item.excerpt !== item.value && (
-              <blockquote className="detail-source-quote">{item.excerpt}</blockquote>
-            )}
+
           </div>
           <footer className="evidence-meta">
             <span>
@@ -142,7 +140,7 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
   const e = detail.establishment;
   const proposal =
     e.proposals.find((p) => p.id === desk.params.get("voorstel")) ??
-    e.proposals.find((p) => p.reviewState === "pending") ??
+    e.proposals.find((p) => p.reviewState === "pending" && !p.supersededBy) ??
     e.proposals.at(-1);
   const approved = approvedChanges([detail]);
   const contact = approved.filter((item) =>
@@ -181,7 +179,7 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
         <>
           {e.proposals.length > 1 && (
             <nav className="detail-proposal-nav" aria-label={u.pending}>
-              {e.proposals.map((p) => (
+              {e.proposals.filter((p) => !p.supersededBy).map((p) => (
                 <Button key={p.id} variant={p.id === proposal.id ? "default" : "outline"}
                   aria-current={p.id === proposal.id ? "true" : undefined}
                   onClick={() => desk.openRecord(toRecord(detail, p.id), desk.screen)}>

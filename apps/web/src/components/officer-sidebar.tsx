@@ -11,6 +11,7 @@ import {
   ChevronsUpDown,
   LogOut,
   MapPinned,
+  Radar,
 } from "lucide-react";
 import { deskRoutes, type DeskScreen } from "@/lib/desk-routes";
 import { deskNl as t, sidebarNl as s, uxNl as u, nl } from "@/lib/nl";
@@ -47,13 +48,14 @@ const icons = {
   map: Rows3,
   review: ClipboardCheck,
   history: History,
+  research: Radar,
   sources: Building2,
   states: Building2,
 };
 const groups: { label: string; items: DeskScreen[] }[] = [
   {
     label: s.workspace,
-    items: ["overview", "street", "review", "history"],
+    items: ["overview", "street", "review", "history", "research"],
   },
 ];
 export function OfficerSidebar({

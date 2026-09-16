@@ -1,5 +1,6 @@
 import {
   DataError,
+  acceptedFields,
   reviewRequestSchema,
   type Detail,
   type Review,
@@ -18,6 +19,23 @@ export function applyReview(
     next = structuredClone(detail),
     p = next.establishment.proposals.find((p) => p.id === request.proposalId);
   if (!p) throw new DataError("NOT_FOUND", "Voorstel niet gevonden.", 404);
+  if (p.supersededBy)
+    throw new DataError(
+      "SUPERSEDED",
+      "Er is een recenter voorstel. Laad de zaak opnieuw.",
+      409,
+    );
+  if (p.baselineReviewId !== undefined && p.reviewState === "pending") {
+    const accepted = acceptedFields(detail).find(
+      (x) => x.proposal.field === p.field,
+    );
+    if ((accepted?.review.reviewId ?? null) !== p.baselineReviewId)
+      throw new DataError(
+        "BASELINE_CONFLICT",
+        "De goedgekeurde waarde is intussen gewijzigd. Onderzoek deze zaak opnieuw.",
+        409,
+      );
+  }
   if (p.revision !== request.expectedRevision)
     throw new DataError(
       "REVISION_CONFLICT",
@@ -62,10 +80,7 @@ export function approvedCsv(details: Detail[], filters: Filters = {}): string {
     ],
   ];
   for (const d of details.filter((d) => matches(d.establishment, filters)))
-    for (const p of d.establishment.proposals) {
-      if (p.reviewState !== "approved") continue;
-      const review = d.reviews.findLast((r) => r.proposalId === p.id);
-      if (!review || review.decision !== "approve") continue;
+    for (const { proposal: p, review } of acceptedFields(d)) {
       const ids = d.evidence
         .filter((e) => p.evidenceIds.includes(e.id))
         .map((e) => e.sourceId);

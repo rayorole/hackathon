@@ -2,6 +2,7 @@
 import { DeskEmpty } from "./desk-empty";
 import { emptyNl } from "@/lib/nl";
 import Image from "next/image";
+import { MunicipalMonitoring } from "./municipal-monitoring";
 import Link from "next/link";
 import { PrioritySummary } from "./control-insights";
 import { ReportBusiness, CandidateList } from "./candidate-businesses";
@@ -375,6 +376,7 @@ export function OverviewView() {
           </div>
         </section>
       )}
+      <MunicipalMonitoring compact />
       <aside className="coverage-strip">
         <CircleHelp className="size-5 shrink-0" />
         <p>{u.coverage}</p>
