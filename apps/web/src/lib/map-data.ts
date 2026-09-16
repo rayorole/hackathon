@@ -22,6 +22,10 @@ export const mapDetailSchema = z.object({
   zetel: BusinessRecord.nullable().optional(),
   bewijs: z.array(Evidence),
   score: mapScoreSchema.nullable(),
+  correcties: z.array(z.object({
+    id: z.string(), runId: z.string(), ondernemingsnr: z.string(),
+    field: z.string(), value: z.string(), medewerker: z.string(), createdAt: z.string(),
+  })).default([]),
 });
 export type MapEntry = z.infer<typeof mapEntrySchema>;
 export type MapDetail = z.infer<typeof mapDetailSchema>;

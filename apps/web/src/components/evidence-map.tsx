@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { Search, LocateFixed, RefreshCw, MapPin, X, Building2, Store, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, LocateFixed, RefreshCw, MapPin, X, Building2, Store, ArrowUpRight, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { mapNl as t, nl } from "@/lib/nl";
 import { mapConfidence, coordinateState, filterMapRecords, inMapBounds, mapPageSchema, municipality, recordAddress, type MapEntry, type MapKind, type MapConfidence, type MapBounds } from "@/lib/map-data";
@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { MapRecordDetail } from "@/components/map-record-detail";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +26,7 @@ async function loadMapRecords(signal: AbortSignal): Promise<MapEntry[]> {
   let cursor: string | null = null;
   const seen = new Set<string>();
   do {
-    const response = await apiFetch(`/api/kaart${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`, { signal });
+    const response = await apiFetch(`/api/kaart${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""}`, { signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]) });
     const page = mapPageSchema.parse(await response.json());
     entries.push(...page.entries);
     cursor = page.nextCursor;
@@ -69,17 +71,22 @@ export function MapWorkspace() {
     </div>
     {records.isError && <Alert variant="destructive"><AlertDescription className="flex flex-wrap items-center justify-between gap-2">{t.loadError}<Button variant="outline" size="sm" onClick={() => void records.refetch()}>{t.retry}</Button></AlertDescription></Alert>}
     <Card className="gap-0 overflow-hidden py-0">
+      <Collapsible>
       <div className="flex flex-wrap items-center gap-2 border-b p-3">
         <div className="relative min-w-56 flex-1"><Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" /><Input aria-label={t.searchLabel} placeholder={t.search} value={query} onChange={e => { setQuery(e.target.value); filterChanged(); }} className="pl-9" /></div>
+        <CollapsibleTrigger render={<Button variant="outline" size="sm" />}><SlidersHorizontal className="size-4" />{t.filters}{(kind !== "all" || confidence !== "all") && ` (${Number(kind !== "all") + Number(confidence !== "all")})`}</CollapsibleTrigger>
+        <Button variant="outline" size="sm" disabled={!located.length} onClick={() => setFitRequest(n => n + 1)}><LocateFixed className="size-4" />{t.fit}</Button>
+        {hasFilters && <Button variant="ghost" size="icon-sm" aria-label={t.clear} onClick={clear}><X className="size-4" /></Button>}
+      </div>
+      <CollapsibleContent><div className="flex flex-wrap gap-3 border-b bg-muted/30 p-3">
         <Select value={kind} onValueChange={v => { if (v) { setKind(v); filterChanged(); } }} items={{ all: t.allKinds, onderneming: t.onderneming, vestiging: t.vestiging }}>
           <SelectTrigger aria-label={t.kind}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t.allKinds}</SelectItem><SelectItem value="onderneming">{t.onderneming}</SelectItem><SelectItem value="vestiging">{t.vestiging}</SelectItem></SelectContent>
         </Select>
         <Select value={confidence} onValueChange={v => { if (v) { setConfidence(v); filterChanged(); } }} items={{ all: t.allConfidence, Hoog: t.high, Middel: t.medium, Laag: t.low, unknown: t.unassessed }}>
           <SelectTrigger aria-label={t.confidence}><SelectValue /></SelectTrigger><SelectContent>{([ ["all", t.allConfidence], ["Hoog", t.high], ["Middel", t.medium], ["Laag", t.low], ["unknown", t.unassessed] ] as const).map(([v,label]) => <SelectItem key={v} value={v}>{label}</SelectItem>)}</SelectContent>
         </Select>
-        <Button variant="outline" size="sm" disabled={!located.length} onClick={() => setFitRequest(n => n + 1)}><LocateFixed className="size-4" />{t.fit}</Button>
-        {hasFilters && <Button variant="ghost" size="icon-sm" aria-label={t.clear} onClick={clear}><X className="size-4" /></Button>}
-      </div>
+      </div></CollapsibleContent>
+      </Collapsible>
       <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="relative h-[440px] min-w-0 bg-muted sm:h-[540px] lg:h-[640px]">
           <MapCanvas entries={located} selected={selected} onSelect={setSelected} onBounds={setBounds} fitRequest={fitRequest} />
@@ -91,7 +98,7 @@ export function MapWorkspace() {
           {selected ? <MapRecordDetail entry={selected} onClose={() => setSelected(null)} /> : <>
             <div className="space-y-3 border-b p-4"><div className="flex items-center justify-between"><h2 className="text-sm font-semibold">{t.results}</h2><Badge variant="secondary" aria-live="polite">{shown.length}</Badge></div><Button variant={visibleOnly ? "secondary" : "outline"} size="sm" aria-pressed={visibleOnly} onClick={() => { setVisibleOnly(v => !v); setPage(0); }}>{t.visibleOnly}</Button><p className="text-xs leading-relaxed text-muted-foreground">{t.selectNote}</p></div>
             <div className="max-h-[400px] flex-1 overflow-y-auto lg:max-h-none" aria-busy={records.isPending}>
-              {records.isPending ? <p className="p-5 text-sm text-muted-foreground" role="status">{t.loading}</p> : !shown.length ? <div className="space-y-2 p-5"><MapPin className="size-6 text-muted-foreground" /><h3 className="text-sm font-medium">{t.empty}</h3><p className="text-xs leading-relaxed text-muted-foreground">{entries.length ? t.emptyNote : records.isError ? t.loadError : t.noData}</p>{hasFilters && <Button size="sm" variant="outline" onClick={clear}>{t.clear}</Button>}</div> : shown.slice(currentPage * 25, currentPage * 25 + 25).map(entry => {
+              {records.isPending ? <p className="p-5 text-sm text-muted-foreground" role="status">{t.loading}</p> : !shown.length ? <div className="space-y-2 p-5"><MapPin className="size-6 text-muted-foreground" /><h3 className="text-sm font-medium">{records.isError ? t.loadErrorTitle : t.empty}</h3><p className="text-xs leading-relaxed text-muted-foreground">{entries.length ? t.emptyNote : records.isError ? t.loadError : t.noData}</p>{hasFilters && <Button size="sm" variant="outline" onClick={clear}>{t.clear}</Button>}</div> : shown.slice(currentPage * 25, currentPage * 25 + 25).map(entry => {
                 const { record, score } = entry; const state = coordinateState(record);
                 return <Button key={record.ondernemingsnr} variant="ghost" onClick={() => setSelected(entry)} className="h-auto w-full justify-start gap-3 rounded-none border-b px-4 py-4 text-left whitespace-normal">
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">{record.kind === "vestiging" ? <Store className="size-4" /> : <Building2 className="size-4" />}</span>
@@ -105,7 +112,7 @@ export function MapWorkspace() {
       </div>
       <div className="flex flex-wrap gap-x-5 gap-y-2 border-t px-4 py-3 text-xs text-muted-foreground" aria-live="polite"><span className="font-medium text-foreground">{located.length} {t.located}</span><span>{missing} · {t.missing}</span><span>{suspect} · {t.suspect}</span><span className="ml-auto hidden md:inline">{t.help}</span></div>
     </Card>
-    <div className="grid gap-3 text-xs leading-relaxed text-muted-foreground md:grid-cols-2"><p>{t.registerNote} {t.unlocatedNote}</p><p>{t.bboxNote} {t.noPublish}</p></div>
+    <Accordion><AccordionItem value="data"><AccordionTrigger>{t.aboutData}</AccordionTrigger><AccordionContent><p>{t.unlocatedNote}</p><p>{t.bboxNote} {t.noPublish}</p></AccordionContent></AccordionItem></Accordion>
     <p className="text-[11px] text-muted-foreground">{nl.attribution} <a href="https://data.vlaanderen.be/id/licentie/modellicentie-gratis-hergebruik/v1.0" target="_blank" rel="noreferrer" className="underline underline-offset-2">{municipality.dataset.licentie}</a></p>
   </div>;
 }

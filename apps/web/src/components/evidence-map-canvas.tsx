@@ -30,7 +30,7 @@ function themeColor(token: string) {
   return `rgb(${r},${g},${b})`;
 }
 
-function MapContents({ entries, selected, onSelect, onBounds, fitRequest }: Props) {
+function MapContents({ entries, selected, onSelect, onBounds, fitRequest, onRetry }: Props & { onRetry: () => void }) {
   const { map, isLoaded } = useMap();
   const [failed, setFailed] = useState(false);
   const [palette, setPalette] = useState<string[] | null>(null);
@@ -51,14 +51,13 @@ function MapContents({ entries, selected, onSelect, onBounds, fitRequest }: Prop
     if (!map) return;
     const publishBounds = () => { const b = map.getBounds(); onBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]); };
     const handleError = () => setFailed(true);
-    const handleIdle = () => { if (map.areTilesLoaded()) setFailed(false); };
     map.getCanvas().setAttribute("aria-label", t.mapLabel);
     map.getCanvas().setAttribute("aria-description", t.mapKeyboard);
-    map.on("moveend", publishBounds); map.on("error", handleError); map.on("idle", handleIdle);
+    map.on("moveend", publishBounds); map.on("error", handleError);
     publishBounds();
     const observer = new ResizeObserver(() => map.resize()); observer.observe(map.getContainer());
     const timeout = window.setTimeout(() => { if (!map.loaded()) setFailed(true); }, 15_000);
-    return () => { map.off("moveend", publishBounds); map.off("error", handleError); map.off("idle", handleIdle); observer.disconnect(); clearTimeout(timeout); };
+    return () => { map.off("moveend", publishBounds); map.off("error", handleError); observer.disconnect(); clearTimeout(timeout); };
   }, [map, onBounds]);
 
   useEffect(() => {
@@ -97,10 +96,11 @@ function MapContents({ entries, selected, onSelect, onBounds, fitRequest }: Prop
       <Button variant="ghost" size="icon-sm" aria-label={t.reset} title={t.reset} onClick={() => { onSelect(null); map?.fitBounds(initialBounds, { padding: 35, duration: 0 }); }}><LocateFixed className="size-4" /></Button>
       <Button variant="ghost" size="icon-sm" aria-label={t.fullscreen} title={t.fullscreen} onClick={() => void fullscreen()}><Maximize className="size-4" /></Button>
     </div>
-    {failed && <div role="alert" className="absolute inset-x-3 top-24 z-20 rounded-lg border bg-card p-3 text-xs shadow-sm"><p>{t.tileError}</p><Button variant="outline" size="sm" className="mt-2" onClick={() => { setFailed(false); map?.setStyle(map.getStyle()); }}>{t.retry}</Button></div>}
+    {failed && <div role="alert" className="absolute inset-x-3 top-24 z-20 rounded-lg border bg-card p-3 text-xs shadow-sm"><p>{t.tileError}</p><Button variant="outline" size="sm" className="mt-2" onClick={onRetry}>{t.retry}</Button></div>}
   </>;
 }
 
 export default function EvidenceMapCanvas(props: Props) {
-  return <MapErrorBoundary><Map theme="light" bounds={initialBounds} fitBoundsOptions={{ padding: 35 }} minZoom={7} maxZoom={20} attributionControl={{ compact: false }} locale={{ "AttributionControl.ToggleAttribution": t.toggleAttribution, "AttributionControl.MapAttribution": t.mapAttribution, "Map.Title": t.mapLabel }}><MapContents {...props} /></Map></MapErrorBoundary>;
+  const [generation, setGeneration] = useState(0);
+  return <MapErrorBoundary><Map key={generation} theme="light" bounds={initialBounds} fitBoundsOptions={{ padding: 35 }} minZoom={7} maxZoom={20} attributionControl={{ compact: false }} locale={{ "AttributionControl.ToggleAttribution": t.toggleAttribution, "AttributionControl.MapAttribution": t.mapAttribution, "Map.Title": t.mapLabel }}><MapContents {...props} onRetry={() => setGeneration(n => n + 1)} /></Map></MapErrorBoundary>;
 }

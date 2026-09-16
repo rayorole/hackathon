@@ -1,4 +1,6 @@
 import type { BusinessRecord, Evidence, Voorstel, Zekerheid } from "./types.js";
+import { realDate } from "./types";
+import { PublicSourceUrl } from "./ai-evidence";
 
 /**
  * Confidence scoring.
@@ -59,6 +61,7 @@ const WEIGHT_BY_SIGNAL = new Map(SIGNAL_WEIGHTS.map((w) => [w.signal, w]));
 export interface ScoreReason {
   signal: string;
   uitleg: string;
+  /** Actual allocated contribution after the correlated-source cap. */
   punten: number;
   bron: string;
   bronUrl: string | null;
@@ -80,37 +83,69 @@ export interface ScoreResult {
 
 /** Stopzetting on the register is decisive and overrides the evidence score. */
 function isStopgezet(record: BusinessRecord): boolean {
-  return record.datumStopzetting !== null;
+  return realDate(record.datumStopzetting) !== null;
 }
 
 export function scoreRecord(record: BusinessRecord, bewijs: Evidence[]): ScoreResult {
   const redenen: ScoreReason[] = [];
-  let score = 0;
+  const seen = new Set<string>();
+  const valid = bewijs.filter((e) => e.source.trim() && e.observation.trim()
+    && PublicSourceUrl.safeParse(e.sourceUrl).success
+    && e.observedAt.length === 10 && realDate(e.observedAt) === e.observedAt);
+  const sourceReasons = new Map<string, ScoreReason[]>();
 
-  for (const e of bewijs) {
+  for (const e of valid) {
     const weight = WEIGHT_BY_SIGNAL.get(e.signal);
     if (!weight || e.direction === "neutraal") continue;
 
+    // Pages on the same host are correlated; www is not an independent source.
+    const source = new URL(e.sourceUrl!).hostname.toLowerCase().replace(/^www\./, "");
+    const key = `${source}|${e.signal}|${e.direction}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
     const punten = e.direction === "bevestigt" ? weight.gewicht : -weight.gewicht;
-    score += punten;
-    redenen.push({
+    const reason: ScoreReason = {
       signal: e.signal,
       uitleg: weight.uitleg,
       punten,
       bron: e.source,
       bronUrl: e.sourceUrl,
       waargenomenOp: e.observedAt,
-    });
+    };
+    redenen.push(reason);
+    const groupKey = `${source}|${e.direction}`;
+    const group = sourceReasons.get(groupKey) ?? [];
+    group.push(reason);
+    sourceReasons.set(groupKey, group);
   }
 
-  const gezien = new Set(bewijs.map((e) => e.signal));
+  // A transparent heuristic, not a calibrated probability. One site adds at most 30
+  // points per direction, so repeated pages cannot establish high confidence alone.
+  for (const group of sourceReasons.values()) {
+    const total = group.reduce((sum, reason) => sum + Math.abs(reason.punten), 0);
+    if (total <= 30) continue;
+    // Allocate the cap proportionally in whole points. Largest remainders get
+    // the remaining points; signal IDs break ties independently of input order.
+    const allocations = group.map((reason) => {
+      const exact = Math.abs(reason.punten) * 30 / total;
+      return { reason, sign: Math.sign(reason.punten), points: Math.floor(exact), fraction: exact - Math.floor(exact) };
+    }).sort((a, b) => b.fraction - a.fraction || a.reason.signal.localeCompare(b.reason.signal));
+    let remaining = 30 - allocations.reduce((sum, allocation) => sum + allocation.points, 0);
+    for (const allocation of allocations) {
+      allocation.reason.punten = allocation.sign * (allocation.points + (remaining > 0 ? 1 : 0));
+      remaining -= 1;
+    }
+  }
+
+  const gezien = new Set(valid.filter((e) => e.direction !== "neutraal").map((e) => e.signal));
   const ontbrekendeSignalen = SIGNAL_WEIGHTS.filter((w) => !gezien.has(w.signal)).map(
     (w) => w.signal,
   );
 
-  score = Math.max(0, Math.min(100, score));
+  const score = Math.max(0, Math.min(100, redenen.reduce((sum, reason) => sum + reason.punten, 0)));
 
-  const waarnemingen = bewijs.map((e) => e.observedAt).filter(Boolean).sort();
+  const waarnemingen = valid.map((e) => e.observedAt).sort();
   const laatsteWaarneming = waarnemingen.length ? waarnemingen[waarnemingen.length - 1]! : null;
 
   const zekerheid: Zekerheid = score >= 60 ? "Hoog" : score >= 30 ? "Middel" : "Laag";
@@ -139,7 +174,7 @@ function bepaalVoorstel(
     return "Nazicht: adres wijkt af van adressenregister";
   }
 
-  if (zekerheid === "Laag") return "Ter controle: mogelijk niet meer actief";
+  if (zekerheid === "Laag") return "Nazicht: onvoldoende bewijs";
 
   if (!record.telefoon && !record.email && score < 60) {
     return "Nazicht: contactgegevens onbekend";

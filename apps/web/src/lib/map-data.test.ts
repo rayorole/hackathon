@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { coordinateState, filterMapRecords, mapPageSchema, type MapEntry } from "./map-data";
+import { coordinateState, filterMapRecords, inMapBounds, mapConfidence, displayObservationDate, mapPageSchema, type MapEntry } from "./map-data";
 
 const entry: MapEntry = {
   record: { ondernemingsnr: "0123456789", kind: "vestiging", naam: "Testzaak", commercieleNaam: null,
@@ -36,4 +36,18 @@ test("API boundary rejects numeric registry numbers instead of losing leading ze
 test("map accepts the core scorer's structured reasons with source, weight and observation date", () => {
   const page = { entries: [{ ...entry, score: { zekerheid: "Hoog", voorstel: "Geen actie", laatsteWaarneming: "2026-09-07", redenen: [{ signal: "website-bereikbaar", uitleg: "Website bereikbaar", punten: 25, bron: "Website", bronUrl: "https://example.org", waargenomenOp: "2026-09-07" }] } }], nextCursor: null };
   assert.equal(mapPageSchema.safeParse(page).success, true);
+});
+
+test("confidence without a traceable source or with a placeholder date stays unassessed", () => {
+  const score: NonNullable<MapEntry["score"]> = { zekerheid: "Hoog", voorstel: "Geen actie", laatsteWaarneming: "2026-09-07", redenen: [{ signal: "test", uitleg: "Waarneming", punten: 25, bron: "Website", bronUrl: "https://example.org", waargenomenOp: "2026-09-07" }] };
+  assert.equal(mapConfidence(score), "Hoog");
+  assert.equal(mapConfidence({ ...score, redenen: [{ ...score.redenen[0], bronUrl: null }] }), "unknown");
+  assert.equal(mapConfidence({ ...score, redenen: [{ ...score.redenen[0], waargenomenOp: "1900-01-01" }] }), "unknown");
+  assert.equal(displayObservationDate("9999-12-31"), "—");
+});
+
+test("viewport filtering excludes offscreen and unlocated points without moving them", () => {
+  assert.equal(inMapBounds(entry.record, [4.49, 51.24, 4.51, 51.26]), true);
+  assert.equal(inMapBounds(entry.record, [4.52, 51.24, 4.53, 51.26]), false);
+  assert.equal(inMapBounds({ ...entry.record, longitude: null }, [4.49, 51.24, 4.51, 51.26]), false);
 });

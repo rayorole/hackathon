@@ -13,15 +13,12 @@ import {
   ChevronsUpDown,
   LogOut,
   MapPin,
-  ArrowUpRight,
 } from "lucide-react";
 import { deskRoutes, type DeskScreen } from "@/lib/desk-routes";
 import { deskNl as t, sidebarNl as s, nl } from "@/lib/nl";
 import { signOut } from "@/app/login/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -58,19 +55,16 @@ const icons = {
 const groups: { label: string; items: DeskScreen[] }[] = [
   {
     label: s.workspace,
-    items: ["overview", "street", "map", "review", "history"],
+    items: ["overview", "street", "review", "history"],
   },
-  { label: s.management, items: ["sources"] },
-  { label: s.demo, items: ["states"] },
+  { label: s.management, items: ["map", "sources"] },
 ];
 export function OfficerSidebar({
   officer,
   queueCount,
-  recordCount,
 }: {
   officer: string;
   queueCount: number;
-  recordCount: number;
 }) {
   const pathname = usePathname();
   const { setOpenMobile, state, isMobile } = useSidebar();
@@ -130,9 +124,7 @@ export function OfficerSidebar({
                   count =
                     key === "review"
                       ? queueCount
-                      : key === "street"
-                        ? recordCount
-                        : null;
+                      : null;
                 return (
                   <SidebarMenuItem key={key}>
                     <SidebarMenuButton
@@ -146,7 +138,7 @@ export function OfficerSidebar({
                       tooltip={t.nav[key]}
                       aria-label={t.nav[key]}
                       isActive={active}
-                      className="h-9 gap-3 rounded-md px-3 pr-11 text-[13px] text-muted-foreground transition-colors hover:text-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-foreground"
+                      className="h-11 gap-3 rounded-md px-3 pr-11 text-sm text-muted-foreground transition-colors hover:text-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-foreground"
                     >
                       <Icon className="size-4" />
                       <span className="group-data-[collapsible=icon]:hidden">{t.nav[key]}</span>
@@ -164,28 +156,6 @@ export function OfficerSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter className="gap-3 p-3 group-data-[collapsible=icon]:p-2">
-        <Card className="desk-source-card gap-2 rounded-xl border p-3 shadow-none ring-0 group-data-[collapsible=icon]:hidden">
-          <div className="flex items-center gap-2 text-xs font-medium">
-            <Database className="size-3.5 text-primary" />
-            {s.dataset}
-          </div>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            {t.sample}
-            <br />
-            {t.updated}
-          </p>
-          <Button
-            render={<Link href={deskRoutes.sources} />}
-            nativeButton={false}
-            variant="outline"
-            size="sm"
-            onClick={closeMobile}
-            className="desk-source-action mt-1 w-full justify-between text-xs"
-          >
-            {s.sourceDetails}
-            <ArrowUpRight className="size-3" />
-          </Button>
-        </Card>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
