@@ -1,4 +1,4 @@
-import { MapView } from "@/components/officer-desk";
+import { EvidenceMap } from "@/components/evidence-map";
 export default function Page() {
-  return <MapView />;
+  return <EvidenceMap />;
 }

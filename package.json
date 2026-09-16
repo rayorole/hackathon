@@ -14,7 +14,7 @@
     "db:push": "npm run db:push -w @kbo/api",
     "ingest": "npm run ingest -w @kbo/api",
     "enrich": "npm run enrich -w @kbo/api",
-    "test": "tsx --test packages/contracts/tests/*.test.ts",
+    "test": "tsx --test packages/contracts/tests/*.test.ts apps/web/src/lib/map-data.test.ts",
     "db:check": "node --env-file=apps/web/.env.local --import tsx scripts/check-supabase.ts",
     "db:seed": "node --env-file=apps/web/.env.local --import tsx scripts/seed-supabase.ts",
     "db:import:kbo": "node --env-file=apps/web/.env.local --import tsx scripts/import-kbo.ts",

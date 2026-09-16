@@ -1,10 +1,12 @@
 # MVP verification — 16 September 2026
 
-Integration based on Ray's main `30accf8`. Tested on localhost:3101 against the dedicated project database, using Jochem's registered and confirmed officer account.
+Integration based on Ray's main `292592e`, including his latest charts, table controls and interactive map. Tested on localhost:3101 against the dedicated project database, using Jochem's registered and confirmed officer account.
 
 Passed: registration and email confirmation (user completed password entry); pending access before administrator grant; authenticated dashboard; 543 real establishments and 27 Paalstraat results; business-name and establishment-ID search; empty search; correct Amplifon establishment/parent separation; dated evidence and working external source link; phone approval and email rejection; server-recorded reviewer identity; full page reload preserves both decisions; downloaded CSV has only the approved phone and its source URL; real coordinate map; source inventory; supported source refresh preserves reviewed proposals and adds an opening-hours proposal; sign-out and protected-page redirect afterward.
 
-Backend checks: all protected APIs return 401 when signed out; foreign-origin writes return 403. Actual persisted dossier inspection confirmed both reviews, correct actor ID, independent proposal revisions and preserved evidence. 14 regression tests, lint, all relevant TypeScript checks and production build pass locally.
+Latest Ray interface also verified in Brave: charts show real totals, command search opens the canonical Amplifon dossier, table pagination advances, and the interactive map renders 525 supplied locations with 18 unlocated records retained in the list. Map search and selected-dossier evidence/review states pass.
+
+Backend checks: all protected APIs return 401 when signed out; foreign-origin writes return 403. Actual persisted dossier inspection confirmed both reviews, correct actor ID, independent proposal revisions and preserved evidence. 19 regression tests, lint, all relevant TypeScript checks and production build pass locally.
 
 Test decisions intentionally remain in the Amplifon history with explicit MVP test notes. The phone is supported by two local sources; the email rejection tests export filtering and is not a claim that the address is wrong. They can be superseded through a new review, preserving the audit. The opening-hours proposal remains pending for the demo.
 
