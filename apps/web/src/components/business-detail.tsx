@@ -105,20 +105,7 @@ export function Evidence({
               }
               showOriginal={false}
             />
-            {item.value && item.value !== item.excerpt ? (
-              <details
-                className="source-excerpt"
-                open={normalizedField(item.field) !== "openinghours"}
-              >
-                <summary>{t.sourceText}</summary>
-                <blockquote>{item.excerpt}</blockquote>
-              </details>
-            ) : normalizedField(item.field) !== "openinghours" ? null : (
-              <details className="source-excerpt">
-                <summary>{t.sourceText}</summary>
-                <blockquote>{item.excerpt}</blockquote>
-              </details>
-            )}
+
           </div>
           <footer className="evidence-meta">
             <span>
