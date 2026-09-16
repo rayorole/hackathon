@@ -18,10 +18,10 @@ function InfoHint({ label, children }: { label: string; children: string }) {
   </Popover>;
 }
 const labels: Record<string, string> = {
-  queued: "In wachtrij",
+  queued: "Wacht op onderzoek",
   running: "Wordt onderzocht",
-  checked: "Bronnen bekeken",
-  no_source: "Bron niet gevonden",
+  checked: "Bron bekeken",
+  no_source: "Geen bron gevonden",
   failed: "Opnieuw proberen",
   budget_blocked: "Wacht op onderzoeksruimte",
 };
@@ -83,6 +83,11 @@ export function MunicipalMonitoring({ compact = false }: { compact?: boolean }) 
           .toLocaleLowerCase("nl-BE")
           .includes(query.toLocaleLowerCase("nl-BE")),
     ) ?? [];
+  // Coverage groups are disjoint: a recheck never erases an earlier successful source check.
+  const allJobs = data?.jobs ?? [];
+  const viewed = allJobs.filter(job => job.checkedAt !== null).length;
+  const noSource = allJobs.filter(job => job.checkedAt === null && job.status === "no_source").length;
+  const remaining = allJobs.length - viewed - noSource;
   const status = error ? "Status niet beschikbaar" : !data ? "Status ophalen…" : data.paused ? "Onderzoek gepauzeerd" : data.online ? "Automatisch onderzoek actief" : "Onderzoek tijdelijk niet bereikbaar";
   const currentPage = Math.min(page, Math.max(0, Math.ceil(jobs.length / 10) - 1));
   const date = (value: string | null) => value ? new Date(value).toLocaleString("nl-BE", {day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "Nog niet gecontroleerd";
@@ -98,7 +103,7 @@ export function MunicipalMonitoring({ compact = false }: { compact?: boolean }) 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="flex items-center gap-2 text-sm font-medium">{statusDot}{status}</p>
-          <p className="mt-2 text-sm text-muted-foreground">We vergelijken de bekende zaken in Schoten met openbare bronnen.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Eerst zoeken we een bron bij een zaak. Pas als die gevonden is, kan AI de inhoud bekijken.</p>
         </div>
         <Button variant="outline" size="sm" disabled={busy || !data?.total} onClick={toggle}>
           {data?.paused ? <Play className="size-4" /> : <Pause className="size-4" />}{data?.paused ? "Hervatten" : "Pauzeren"}
@@ -108,14 +113,17 @@ export function MunicipalMonitoring({ compact = false }: { compact?: boolean }) 
       {!data && !error && <p className="py-12 text-center text-sm text-muted-foreground">Wachtrij ophalen…</p>}
       {data && <>
         <div className="surface-panel overflow-hidden">
-          <dl className="grid grid-cols-2 border-b md:grid-cols-4">
+          <div className="border-b px-5 py-4">
+            <p className="text-sm font-medium">Van {allJobs.length} zaken hebben we bij {viewed} een bron bekeken.</p>
+            <p className="mt-1 text-xs text-muted-foreground">{data.researchStarted} AI-analyses gestart binnen het automatische onderzoek.<InfoHint label="AI-analyses">Dit telt gestarte inhoudelijke analyses, niet alle zaken waarvoor we een bron zochten. Een hercontrole kan dezelfde zaak opnieuw tellen. Eerdere losse ontwikkeltests tellen hier niet mee.</InfoHint></p>
+          </div>
+          <dl className="grid grid-cols-1 border-b sm:grid-cols-3">
             {[
-              {value: data.total, label: "Zaken in onderzoek", help: "Alle zaken uit de ingeladen KBO-selectie die we opvolgen. Dit zijn niet alle zaken in Schoten."},
-              {value: data.checked, label: "Bronnen bekeken", help: "Voor deze zaken is minstens één openbare bron opgehaald en bekeken. Dat bewijst niet dat een zaak actief is of dat alle gegevens kloppen. Wijzigingen wachten op uw goedkeuring."},
-              {value: data.queued + data.running, label: "Nog te onderzoeken", help: "Deze zaken wachten op hun eerste of volgende controle, of worden nu onderzocht. De wachtrij wordt automatisch verwerkt."},
-              {value: data.noSource, label: "Bron niet gevonden", help: "In de aangesloten bronnen vonden we geen duidelijke match met deze zaak. Dit betekent niet dat de zaak gesloten is. We proberen later opnieuw."},
-            ].map(({value,label,help}) => (
-              <div key={label} className="px-5 py-4"><dt className="flex items-center gap-1 text-xs text-muted-foreground">{label}<InfoHint label={label}>{help}</InfoHint></dt><dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd></div>
+              {value: viewed, label: "Bron bekeken", note: "Inhoud kunnen onderzoeken", help: "Bij deze zaken konden we minstens één bron bekijken. Dit betekent niet dat alle gegevens bevestigd zijn. Eerder bekeken bronnen blijven meetellen tijdens een hercontrole."},
+              {value: noSource, label: "Geen bron gevonden", note: "Nog geen inhoud onderzocht", help: "Wel naar een bron gezocht, maar geen duidelijke match gevonden in onze aangesloten bronnen. Geen bewijs van sluiting."},
+              {value: remaining, label: "Nog te onderzoeken", note: "Wacht, bezig of opnieuw proberen", help: "Nog geen broncheck afgerond. Hieronder vallen ook controles die mislukten of op budget wachten. De status bij de zaak legt uit waarom."},
+            ].map(({value,label,note,help}) => (
+              <div key={label} className="px-5 py-4"><dt className="flex items-center gap-1 text-xs text-muted-foreground">{label}<InfoHint label={label}>{help}</InfoHint></dt><dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd><p className="mt-1 text-xs text-muted-foreground">{note}</p></div>
             ))}
           </dl>
           <div className="flex flex-wrap gap-3 border-b p-4">
