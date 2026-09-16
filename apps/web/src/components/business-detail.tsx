@@ -41,6 +41,10 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
+import { Card } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { detailNl as d } from "@/lib/nl";
+import { BusinessOverview, DecisionTimeline } from "./business-overview";
 
 export function Disclosure({
   title,
@@ -70,7 +74,7 @@ export function Evidence({
   return (
     <div className="evidence-grid">
       {items.map((item) => (
-        <article key={item.evidenceIds.join(",")} className="evidence-card">
+        <Card key={item.evidenceIds.join(",")} className="evidence-card rounded-xl gap-0 py-0 shadow-none ring-0 border">
           <header className="evidence-heading">
             <span className="source-symbol">
               <FileText aria-hidden className="size-4" />
@@ -108,7 +112,9 @@ export function Evidence({
                   : item.value || item.excerpt
               }
             />
-
+            {item.value && item.excerpt !== item.value && (
+              <blockquote className="detail-source-quote">{item.excerpt}</blockquote>
+            )}
           </div>
           <footer className="evidence-meta">
             <span>
@@ -125,7 +131,7 @@ export function Evidence({
             )}
             {item.source?.cached && <span>{u.cached}</span>}
           </footer>
-        </article>
+        </Card>
       ))}
     </div>
   );
@@ -148,11 +154,12 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
     ["telephone", "email", "website"].includes(normalizedField(item.field)),
   );
   return (
-    <div className="business-detail mx-auto w-full max-w-6xl space-y-6">
+    <div className="business-detail mx-auto w-full max-w-7xl space-y-5">
       <Button variant="ghost" className="-ml-3" onClick={desk.back}>
         <ArrowLeft className="size-4" />
         {desk.screen === "review" ? u.backReview : u.back}
       </Button>
+      <Card className="detail-identity rounded-2xl gap-0 py-0 shadow-none border ring-0">
       <header className="business-heading">
         <BusinessAvatar name={e.name} seed={e.id} />
         <div className="min-w-0">
@@ -161,43 +168,29 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
             {e.address.street} {e.address.houseNumber} · {e.address.postalCode}{" "}
             {e.address.municipality}
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {u.activity[e.activityAssessment]}
-          </p>
+          <div className="mt-3 flex flex-wrap gap-2"><Badge variant="secondary" className="h-auto max-w-full whitespace-normal py-1 leading-relaxed">{u.activity[e.activityAssessment]}</Badge><Badge variant="outline">{d.establishment} {e.id}</Badge></div>
         </div>
         <span className="business-heading-label">
           <MapPin className="size-4" />
           {t.localDetails}
         </span>
       </header>
+      <BusinessOverview detail={detail} />
+      </Card>
       {proposal ? (
         <>
           {e.proposals.length > 1 && (
-            <div className="proposal-switcher">
-              <Label htmlFor="proposal-choice">{u.pending}</Label>
-              <select
-                id="proposal-choice"
-                className="mt-2 block w-full rounded-md border bg-background px-3 py-2 text-sm"
-                value={proposal.id}
-                onChange={(event) =>
-                  desk.openRecord(
-                    toRecord(detail, event.target.value),
-                    desk.screen,
-                  )
-                }
-              >
-                {e.proposals.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {fieldLabel(p.field)} ·{" "}
-                    {p.reviewState === "pending"
-                      ? u.pendingStatus
-                      : p.reviewState === "approved"
-                        ? u.approved
-                        : u.rejected}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <nav className="detail-proposal-nav" aria-label={u.pending}>
+              {e.proposals.map((p) => (
+                <Button key={p.id} variant={p.id === proposal.id ? "default" : "outline"}
+                  aria-current={p.id === proposal.id ? "true" : undefined}
+                  onClick={() => desk.openRecord(toRecord(detail, p.id), desk.screen)}>
+                  <FieldIcon field={p.field} />{fieldLabel(p.field)}
+                  <span className={`detail-status-dot detail-status-${p.reviewState}`} />
+                  <span className="sr-only">{p.reviewState === "pending" ? u.pendingStatus : p.reviewState === "approved" ? u.approved : u.rejected}</span>
+                </Button>
+              ))}
+            </nav>
           )}
           <ProposalReview
             key={proposal.id}
@@ -211,7 +204,8 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
           <p className="mt-2 text-sm text-muted-foreground">{u.noChangeNote}</p>
         </div>
       )}
-      <section className="contact-panel surface-panel">
+      <div className="detail-support-grid">
+      <Card className="contact-panel rounded-xl gap-0 py-0 shadow-none border ring-0">
         <PanelTitle
           icon={<ShieldCheck className="size-4" />}
           title={u.contact}
@@ -231,7 +225,9 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
         ) : (
           <p className="p-5 text-sm text-muted-foreground">{u.noContact}</p>
         )}
-      </section>
+      </Card>
+      <DecisionTimeline detail={detail} />
+      </div>
       <div className="secondary-details">
         <Disclosure title={u.registry}>
           <dl className="registry-grid">
@@ -386,9 +382,10 @@ function ProposalReview({
   }
   return (
     <section
-      className="review-workspace space-y-5"
+      className="review-workspace detail-review"
       aria-labelledby="review-heading"
     >
+      <Card className="detail-proposal-card rounded-2xl gap-5 p-6 shadow-none border ring-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2
           id="review-heading"
@@ -407,7 +404,7 @@ function ProposalReview({
       </div>
       <PrioritySummary detail={detail} proposalId={p.id} expanded />
       <div
-        className={`comparison-grid ${!p.before ? "comparison-no-prior" : ""}`}
+        className="comparison-grid"
       >
         <div className="comparison-cell">
           <p className="comparison-label">{latest ? u.original : u.before}</p>
@@ -470,23 +467,22 @@ function ProposalReview({
             in {detail.establishment.parent.registeredAddress.municipality}.
           </p>
         )}
-      <div className="space-y-4">
+      </Card>
+      <Card className="detail-evidence-card rounded-2xl gap-4 p-5 shadow-none border ring-0">
         <h3 className="flex items-center justify-between text-sm font-semibold">
           {u.evidence}
-          <span className="text-xs font-normal text-muted-foreground">
-            {evidence.length} {t.sourceCount}
-          </span>
+          <Badge variant="secondary">{evidence.length} {evidence.length === 1 ? d.source : t.sourceCount}</Badge>
         </h3>
         {evidence.length ? (
           <Evidence items={evidence} />
         ) : (
           <p>{u.noEvidence}</p>
         )}
-      </div>
+      </Card>
       {failure && (
         <div
           role="alert"
-          className="rounded-lg border border-destructive/40 p-4 text-sm"
+          className="detail-review-error rounded-lg border border-destructive/40 p-4 text-sm"
         >
           <p>{failure}</p>
           {stale ? (

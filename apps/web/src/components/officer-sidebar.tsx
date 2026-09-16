@@ -10,13 +10,13 @@ import {
   History,
   ChevronsUpDown,
   LogOut,
-  MapPin,
+  MapPinned,
 } from "lucide-react";
 import { deskRoutes, type DeskScreen } from "@/lib/desk-routes";
 import { deskNl as t, sidebarNl as s, uxNl as u, nl } from "@/lib/nl";
 import { signOut } from "@/app/login/actions";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -33,10 +33,10 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
+  SidebarGroupContent,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuBadge,
   SidebarRail,
   SidebarSeparator,
   useSidebar,
@@ -72,8 +72,8 @@ export function OfficerSidebar({
   const { setOpenMobile, state, isMobile } = useSidebar();
   const closeMobile = () => setOpenMobile(false);
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader className="gap-4 p-3 group-data-[collapsible=icon]:px-2">
+    <Sidebar variant="inset" collapsible="icon" className="desk-sidebar">
+      <SidebarHeader className="desk-sidebar-header p-2" title={s.illustration}>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -86,44 +86,34 @@ export function OfficerSidebar({
                 closeMobile();
                 onNavigate("overview");
               }}
-              className="gap-3 rounded-xl hover:bg-sidebar-accent"
+              className="desk-brand gap-3 rounded-xl"
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Building2 className="size-4" />
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <MapPinned className="size-4" />
               </span>
               <span className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="font-heading text-sm font-semibold">
+                <span className="font-heading text-base font-semibold tracking-tight">
                   {t.brand}
                 </span>
-                <span className="mt-1 text-xs font-normal text-muted-foreground">
-                  {t.subtitle}
+                <span className="desk-brand-subtitle mt-1 text-xs font-normal">
+                  {s.municipality}
                 </span>
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="flex items-center gap-2 rounded-lg border bg-background/70 px-3 py-2 group-data-[collapsible=icon]:hidden">
-          <MapPin className="size-3.5 text-primary" />
-          <span className="flex-1 text-xs font-medium">{s.municipality}</span>
-          <Badge
-            variant="outline"
-            className="rounded text-[10px] text-muted-foreground"
-          >
-            {t.demo}
-          </Badge>
-        </div>
       </SidebarHeader>
-      <SidebarSeparator />
       <SidebarContent className="gap-1">
         {groups.map((group) => (
           <SidebarGroup
             key={group.label}
-            className="px-3 group-data-[collapsible=icon]:px-2"
+            className="px-2 py-3"
           >
-            <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground">
+            <SidebarGroupLabel className="mb-1 h-6 px-3 text-[11px] font-medium text-muted-foreground">
               {group.label}
             </SidebarGroupLabel>
-            <SidebarMenu className="gap-1">
+            <SidebarGroupContent>
+            <SidebarMenu className="gap-0.5">
               {group.items.map((key) => {
                 const Icon = icons[key],
                   active =
@@ -147,52 +137,63 @@ export function OfficerSidebar({
                       tooltip={t.nav[key]}
                       aria-label={t.nav[key]}
                       isActive={active}
-                      className="h-9 gap-3 rounded-md px-3 pr-11 text-[13px] text-muted-foreground transition-colors hover:text-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-foreground"
+                      className="desk-nav-item h-8 gap-3 rounded-lg px-3 text-sm"
                     >
                       <Icon className="size-4" />
                       <span className="group-data-[collapsible=icon]:hidden">
                         {t.nav[key]}
                       </span>
+                      {count !== null && count > 0 && (
+                        <Badge variant="secondary" className="desk-nav-count group-data-[collapsible=icon]:hidden">
+                          {count}
+                        </Badge>
+                      )}
                     </SidebarMenuButton>
-                    {count !== null && (
-                      <SidebarMenuBadge className="bg-transparent text-muted-foreground">
-                        {count}
-                      </SidebarMenuBadge>
-                    )}
                   </SidebarMenuItem>
                 );
               })}
             </SidebarMenu>
+            </SidebarGroupContent>
           </SidebarGroup>
         ))}
-      </SidebarContent>
-      <SidebarFooter className="gap-3 p-3 group-data-[collapsible=icon]:p-2">
+        <SidebarSeparator />
+        <SidebarGroup className="px-2 py-2">
+        <SidebarMenu>
+        <SidebarMenuItem>
         <SidebarMenuButton
+          className="desk-nav-item h-8 rounded-lg px-3 text-sm"
+          render={<Link href={deskRoutes.sources} aria-current={pathname === deskRoutes.sources ? "page" : undefined} />}
+          isActive={pathname === deskRoutes.sources}
           tooltip={u.about}
           aria-label={u.about}
-          onClick={() => onNavigate("sources")}
+          onClick={(event) => { event.preventDefault(); closeMobile(); onNavigate("sources"); }}
         >
           <Database className="size-4" />
           <span className="group-data-[collapsible=icon]:hidden">{u.about}</span>
         </SidebarMenuButton>
+        </SidebarMenuItem>
+        </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter className="desk-sidebar-footer gap-0 border-t border-sidebar-border p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger
                 aria-label={s.account}
                 render={<SidebarMenuButton size="lg" tooltip={s.account} />}
-                className="gap-3 rounded-xl border bg-background/70"
+                className="desk-account gap-3 rounded-lg"
               >
-                <Avatar className="size-8 rounded-lg">
-                  <AvatarFallback className="rounded-lg bg-primary/10 text-xs font-semibold text-primary">
+                <Avatar className="size-8 rounded-full">
+                  <AvatarFallback className="rounded-full bg-primary/10 text-xs font-semibold text-primary">
                     {officer.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <span className="grid min-w-0 flex-1 text-left group-data-[collapsible=icon]:hidden">
-                  <span className="truncate text-xs font-medium">
+                  <span className="truncate text-sm font-medium">
                     {officer}
                   </span>
-                  <span className="truncate text-[10px] text-muted-foreground">
+                  <span className="truncate text-xs text-muted-foreground">
                     {s.officer}
                   </span>
                 </span>

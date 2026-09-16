@@ -51,6 +51,17 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "./ui/sidebar";
+import { Separator } from "./ui/separator";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "./ui/breadcrumb";
+import { municipality } from "@/lib/map-data";
+import { deskRoutes } from "@/lib/desk-routes";
 import {
   Table,
   TableBody,
@@ -96,7 +107,7 @@ function DeskShell({
     <SidebarProvider
       defaultOpen={defaultOpen}
       className="officer-desk task-first premium-desk"
-      style={{ "--sidebar-width": "240px" } as React.CSSProperties}
+      style={{ "--sidebar-width": "224px" } as React.CSSProperties}
     >
       <OfficerSidebar
         officer={desk.officer}
@@ -106,19 +117,40 @@ function DeskShell({
         onBeforeLeave={desk.guard}
       />
       <SidebarInset className="min-w-0 bg-background">
-        <header className="workspace-topbar flex min-h-16 items-center gap-4 border-b px-4 md:px-8">
+        <header className="workspace-topbar flex h-14 shrink-0 items-center gap-3 border-b px-4 md:px-6">
           <SidebarTrigger />
-          <div className="flex items-center gap-2 text-sm">
-            <MapPin className="size-4 text-muted-foreground" />
-            <span>Schoten</span>
-            <span className="hidden text-muted-foreground sm:inline">
-              / {u.titles[desk.screen]}
-            </span>
-          </div>
+          <Separator
+            orientation="vertical"
+            className="hidden h-4 sm:block"
+          />
+          {/* Municipality comes from config/municipality.json, never a literal —
+              swapping municipality must not require a code change (AGENTS.md §6). */}
+          <Breadcrumb className="min-w-0">
+            {/* flex-nowrap: the default list wraps, which would burst a fixed-height bar. */}
+            <BreadcrumbList className="flex-nowrap sm:gap-1.5">
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  render={<Link href={deskRoutes.overview} />}
+                  className="flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  <MapPin className="size-3.5 shrink-0" />
+                  {municipality.naam}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden shrink-0 sm:block" />
+              <BreadcrumbItem className="hidden min-w-0 sm:block">
+                <BreadcrumbPage className="block truncate">
+                  {u.titles[desk.screen]}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
           {desk.fetching && !desk.loading && (
             <LoadingStatus label={loadingText.refreshing} />
           )}
-          <div className="ml-auto hidden sm:block">
+          {/* Search stays reachable on phones — the trigger already hides its
+              keyboard hint and truncates its label below sm. */}
+          <div className="ml-auto flex min-w-0 justify-end">
             <DeskCommandBar
               records={desk.records}
               onNavigate={desk.navigate}

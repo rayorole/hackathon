@@ -299,6 +299,9 @@
   --desk-shadow: 0 1px 2px oklch(0.25 0.006 260 / 3%), 0 5px 18px oklch(0.25 0.006 260 / 2%);
 }
 .dark { --background: oklch(0.18 0.008 240); --sidebar: oklch(0.2 0.008 240); --primary: oklch(0.78 0.065 185); --primary-foreground: oklch(0.2 0.02 185); --accent: oklch(0.29 0.025 185); --accent-foreground: oklch(0.93 0.015 185); --muted-foreground: oklch(0.74 0.012 240); }
+/* h-14 (56px) on the topbar is not arbitrary: it matches the sidebar's 56px photo
+   banner, so the topbar's bottom border and the banner's bottom edge form one
+   continuous line across both panels. Change one, change the other. */
 .workspace-topbar { background: var(--card); }
 .premium-desk .desk-main { max-width: 1440px; }
 .page-heading h1 { font-size: 1.75rem; letter-spacing: -.035em; line-height: 1.25; }
@@ -602,3 +605,123 @@
 .candidate-card { padding: 20px; display: grid; gap: 16px; }
 .candidate-evidence { padding: 14px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--muted); }
 @media (max-width: 640px) { .source-change-values { grid-template-columns: minmax(0,1fr); } .source-change-values > svg { transform: rotate(90deg); } }
+/* Company detail: focused review desk, using the shared semantic palette. */
+.business-detail .detail-identity { background: var(--card); }
+.business-detail .business-heading { padding: 26px 28px; border-bottom: 0; align-items: center; }
+.business-detail .business-heading h1 { font-size: clamp(1.5rem, 2.3vw, 2rem); letter-spacing: -.04em; }
+.business-detail .business-heading-label { padding: 7px 10px; border-radius: 8px; background: var(--muted); }
+.detail-overview { display: grid; grid-template-columns: .7fr .8fr 1.5fr; border-top: 1px solid var(--border); background: color-mix(in oklch, var(--muted) 45%, var(--card)); }
+.detail-overview-stat { display: flex; align-items: center; gap: 14px; padding: 20px 26px; }
+.detail-overview-stat > svg { width: 36px; height: 36px; padding: 9px; border-radius: 10px; color: var(--chart-1); background: color-mix(in oklch, var(--chart-1) 10%, var(--card)); }
+.detail-overview-stat:first-child > svg { color: var(--warning); background: color-mix(in oklch, var(--warning) 10%, var(--card)); }
+.detail-overview-stat strong { display: block; font-size: 1.5rem; line-height: 1.2; font-weight: 600; font-variant-numeric: tabular-nums; }
+.detail-overview-stat span { font-size: .75rem; color: var(--muted-foreground); }
+.detail-progress { align-self: center; padding: 18px 26px; border-left: 1px solid var(--border); }
+.detail-progress-heading { display: flex; justify-content: space-between; gap: 12px; font-size: .75rem; }
+.detail-progress-heading strong { font-weight: 500; color: var(--muted-foreground); }
+.detail-status-chart { display: flex; gap: 3px; height: 7px; overflow: hidden; border-radius: 6px; background: var(--border); margin: 10px 0; }
+.detail-status-pending { background: var(--chart-2); }
+.detail-status-approved { background: var(--chart-1); }
+.detail-status-rejected { background: var(--muted-foreground); }
+.detail-chart-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .6875rem; color: var(--muted-foreground); }
+.detail-chart-legend > span { display: flex; align-items: center; gap: 5px; }
+.detail-status-dot { display: inline-block; width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; }
+.detail-proposal-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.detail-proposal-nav button { border-radius: 10px; height: 40px; gap: 9px; }
+.detail-review { display: grid; grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); align-items: start; gap: 18px; }
+.detail-proposal-card { min-width: 0; }
+.detail-review .comparison-grid { box-shadow: none; border-radius: 10px; }
+.detail-review .comparison-cell { padding: 18px; }
+.detail-review .comparison-proposed { background: color-mix(in oklch, var(--chart-1) 9%, var(--card)); }
+.detail-review .comparison-proposed .comparison-label { color: var(--chart-1); }
+.detail-review .comparison-label { padding-bottom: 10px; }
+.detail-review .review-reason { border: 0; padding: 0; }
+.detail-review .review-reason p { font-size: .8125rem; line-height: 1.7; }
+.detail-review .priority-explanation { margin: 0; padding: 12px; border-radius: 8px; background: color-mix(in oklch, var(--warning) 7%, var(--card)); }
+.detail-evidence-card { min-width: 0; background: color-mix(in oklch, var(--chart-1) 3%, var(--card)); }
+.detail-evidence-card .evidence-grid { grid-template-columns: minmax(0,1fr); gap: 12px; }
+.detail-evidence-card .evidence-heading { padding: 14px 16px; }
+.detail-evidence-card .evidence-content { padding: 16px; }
+.detail-evidence-card .evidence-meta { padding: 10px 16px; font-size: .6875rem; }
+.detail-source-quote { border-left: 2px solid var(--border); padding-left: 12px; margin-top: 12px; font-size: .8125rem; line-height: 1.65; color: var(--muted-foreground); overflow-wrap: anywhere; white-space: pre-wrap; }
+.detail-review .review-actions, .detail-review-error { grid-column: 1 / -1; }
+.detail-review .review-actions { padding: 18px 22px; border-radius: 14px; border-top: 3px solid var(--chart-1); box-shadow: none; }
+.detail-review .review-actions > p:last-child { font-size: .75rem; }
+.detail-support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+.detail-timeline ol { margin: 0; padding: 0; list-style: none; }
+.detail-timeline li { display: flex; position: relative; gap: 12px; padding-bottom: 18px; font-size: .8125rem; }
+.detail-timeline li:last-child { padding-bottom: 0; }
+.detail-timeline li:not(:last-child)::before { content: ''; position: absolute; top: 24px; bottom: 0; left: 11px; width: 1px; background: var(--border); }
+.detail-timeline-icon { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; color: var(--card); }
+.detail-timeline-icon svg { width: 13px; height: 13px; }
+.detail-timeline time { display: block; margin-top: 3px; font-size: .6875rem; color: var(--muted-foreground); }
+.business-detail .secondary-details { gap: 8px; }
+.business-detail .data-disclosure { border-radius: 10px; box-shadow: none; }
+@media (max-width: 1100px) {
+  .detail-review { grid-template-columns: minmax(0,1fr); }
+  .detail-overview { grid-template-columns: 1fr 1fr; }
+  .detail-progress { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--border); }
+}
+@media (max-width: 640px) {
+  .business-detail .business-heading { padding: 20px; flex-wrap: wrap; gap: 12px; }
+  .business-detail .business-heading > div { flex: 1; min-width: 180px; }
+  .business-detail .business-heading-label { display: none; }
+  .detail-overview-stat { padding: 16px; gap: 10px; }
+  .detail-progress { padding: 16px; }
+  .detail-support-grid { grid-template-columns: minmax(0,1fr); }
+  .detail-proposal-card, .detail-evidence-card { padding: 18px; }
+  .detail-review .comparison-grid { grid-template-columns: minmax(0,1fr); }
+  .detail-review .comparison-cell + .comparison-cell { border-left: 0; }
+}
+
+/* Compact shadcn navigation with a distinct illustrated workspace header. */
+:is(.officer-desk, [data-sidebar="sidebar"][data-mobile="true"]) .desk-sidebar-header {
+  padding: 0; margin: 0; gap: 0; border-bottom: 1px solid var(--sidebar-border);
+  background: var(--sidebar); border-radius: 0;
+}
+/* variant="inset" pads the sidebar container so both panels float on the backdrop
+   with matching insets. Keep that padding — zeroing it is what left a square,
+   flush sidebar beside a rounded main panel. */
+.desk-sidebar [data-slot="sidebar-inner"] {
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--desk-shadow);
+  /* Clips the header banner to the panel's top corners, so the image needs no
+     radius of its own and stays correct if the radius token changes. */
+  overflow: clip;
+}
+.desk-sidebar-header::before {
+  content: ''; display: block; height: 56px; flex-shrink: 0;
+  background: url("/backgrounds/sidebar-street.png") center 60% / cover;
+}
+:is(.desk-sidebar, [data-sidebar="sidebar"][data-mobile="true"]) .desk-brand {
+  height: 62px; padding: 12px 16px; border-radius: 0; color: var(--sidebar-foreground); align-items: center;
+}
+:is(.desk-sidebar, [data-sidebar="sidebar"][data-mobile="true"]) .desk-brand:hover { background: var(--sidebar-accent); }
+.desk-brand-subtitle { color: var(--muted-foreground); }
+.desk-brand > span:first-child { background: var(--primary); color: var(--primary-foreground); border: 0; border-radius: 8px; }
+:is(.desk-sidebar, [data-sidebar="sidebar"][data-mobile="true"]) .desk-nav-item { height: 34px; color: var(--muted-foreground); border: 1px solid transparent; transition: background-color 150ms, color 150ms; font-size: 13px; border-radius: 6px; }
+:is(.desk-sidebar, [data-sidebar="sidebar"][data-mobile="true"]) .desk-nav-item:hover { color: var(--sidebar-foreground); }
+:is(.desk-sidebar, [data-sidebar="sidebar"][data-mobile="true"]) .desk-nav-item[data-active] { color: var(--sidebar-accent-foreground); background: var(--sidebar-accent); border-color: transparent; font-weight: 600; box-shadow: none; }
+:is(.desk-sidebar, [data-sidebar="sidebar"][data-mobile="true"]) .desk-nav-item > svg { width: 16px; height: 16px; }
+:is(.desk-sidebar, [data-sidebar="sidebar"][data-mobile="true"]) .desk-nav-count { position: static; display: inline-flex; align-items: center; justify-content: center; margin-left: auto; min-width: 24px; height: 20px; padding: 0 6px; border-radius: 5px; background: var(--muted); color: var(--muted-foreground); font-size: 11px; line-height: 1; font-variant-numeric: tabular-nums; }
+:is(.desk-sidebar, [data-sidebar="sidebar"][data-mobile="true"]) .desk-account { height: 48px; padding: 6px; }
+.desk-sidebar-footer { background: var(--sidebar); padding: 8px 10px; }
+.officer-desk:has(.desk-sidebar) > [data-slot="sidebar-inset"] { overflow: clip; border: 1px solid var(--border); box-shadow: var(--desk-shadow); }
+/* The sidebar's own right padding is the whole gutter. Without this, shadcn's
+   peer-data-[state=collapsed]:ml-2 stacks on top of it and the gap between the
+   panels doubles the moment the sidebar collapses. */
+@media (min-width: 768px) {
+  .officer-desk:has(.desk-sidebar) > [data-slot="sidebar-inset"] { margin-left: 0; }
+}
+.officer-desk [data-collapsible="icon"] .desk-sidebar-header { padding: 8px 0; background: var(--sidebar); border-radius: 0; }
+.officer-desk [data-collapsible="icon"] .desk-brand { align-items: center; }
+.officer-desk [data-collapsible="icon"] .desk-nav-item { height: 34px !important; width: 36px !important; border-radius: 6px; }
+@media (max-width: 767px) {
+  .officer-desk:has(.desk-sidebar) > [data-slot="sidebar-inset"] { border: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.desk-sidebar, [data-sidebar="sidebar"][data-mobile="true"]) .desk-nav-item { transition: none; }
+}
+
+.officer-desk [data-collapsible="icon"] .desk-sidebar-header::before, .officer-desk [data-collapsible="icon"] .desk-nav-count { display: none; }

@@ -307,6 +307,7 @@ export const deskSources = [
   "FAVV-registraties",
 ];
 export const sidebarNl = {
+  illustration: "AI-illustratie · fictief straatbeeld",
   workspace: "Werkruimte",
   management: "Beheer",
   demo: "Steekproef",
@@ -642,6 +643,16 @@ export const controlNl = {
   noChangesNote: "Er zijn nog geen twee vergelijkbare versies met verschillende waarden. Dit bewijst niet dat de zaak ongewijzigd is.",
   previous: "Eerder opgehaald", latest: "Later opgehaald", source: "Bron openen", local: "Deze vestiging", enterprise: "Onderneming", unknownScope: "Locatie onbekend",
 };
+export const detailNl = {
+  source: "bron",
+  establishment: "Vestiging",
+  toReview: "te controleren",
+  linkedSources: "gekoppelde bronnen",
+  proposalStatus: "Voortgang voorstellen",
+  reviewed: "beoordeeld",
+  recentDecisions: "Laatste beslissingen",
+} as const;
+
 export const candidateNl = {
   loading: "Meldingen laden…",
   report: "Ontbrekende zaak melden", title: "Een zaak toevoegen ter controle", intro: "Vul het adres en uw bron in. De melding verschijnt eerst bij Wijzigingen.",
