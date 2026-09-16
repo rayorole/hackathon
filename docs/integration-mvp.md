@@ -26,7 +26,7 @@ The already-applied `straatbeeld_cases` migration is included for reproducibilit
 
 ## AI budget
 
-All paid refresh calls must use the SAME existing ledger on Jochem's machine (`AI_BUDGET_FILE` in his ignored environment). Do not initialize a second $10 ledger on another laptop. Ray can design without an OpenAI key; live refresh should use the designated backend. The ledger is a local-process deployment design, not a distributed/serverless quota. No hosted multi-instance deployment until the budget reservation is made shared and atomic.
+Paid research uses the shared Supabase budget with atomic reservations and a fixed $10 total cap, including previous local usage. Do not initialize a second budget. Ray needs only the existing Supabase environment for the UI; the hosted research worker is independent of his Vercel account. See `docs/municipal-monitoring.md` for activation status and operator instructions.
 
 ## Verify
 

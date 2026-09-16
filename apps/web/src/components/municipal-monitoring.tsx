@@ -142,7 +142,7 @@ export function MunicipalMonitoring() {
             </p>
             {!data.online && (
               <p className="mt-3 rounded-lg border p-3 text-sm">
-                Automatisch onderzoek wacht tot de lokale worker weer draait.
+                De onderzoeksdienst heeft zich recent niet gemeld. De wachtrij blijft bewaard.
                 Eerdere resultaten blijven beschikbaar.
               </p>
             )}

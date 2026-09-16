@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { detailSchema } from "../packages/contracts/src/index";
+import { cloudBudget } from "./lib/cloud-budget";
 import { research } from "./lib/research";
 const id = process.argv[2];
 if (!id || !/^\d{10}$/.test(id))
@@ -19,7 +20,7 @@ const { data, error } = await db
   .eq("id", id)
   .single();
 if (error) throw error;
-const result = await research(detailSchema.parse(data.detail));
+const result = await research(detailSchema.parse(data.detail), undefined, undefined, cloudBudget(db));
 if (result.refreshed) {
   const update = await db
     .from("straatbeeld_cases")

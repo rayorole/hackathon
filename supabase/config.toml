@@ -1,0 +1,4 @@
+project_id = "straatbeeld"
+[functions.municipal-research]
+verify_jwt = false
+entrypoint = "./functions/municipal-research/index.ts"

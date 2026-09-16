@@ -73,6 +73,7 @@ export async function research(
   detail: Detail,
   discovered?: Target[],
   beforeAnalysis?: () => Promise<void>,
+  budgetOverride?: typeof budgeted,
 ): Promise<{ detail: Detail; refreshed: boolean; messageNl: string }> {
   const configured = discovered ?? targets[detail.establishment.id];
   if (!configured?.length)
@@ -109,7 +110,7 @@ export async function research(
   }
   await beforeAnalysis?.();
   const key = process.env.OPENAI_API_KEY,
-    budgetFile = process.env.AI_BUDGET_FILE;
+    budgetFile = budgetOverride ? "cloud" : process.env.AI_BUDGET_FILE;
   if (!key || !budgetFile)
     throw new Error("AI credential or persistent budget is not configured.");
   const body = JSON.stringify({
@@ -143,7 +144,7 @@ export async function research(
   });
   if (Buffer.byteLength(body, "utf8") > 100000)
     throw new Error("AI request exceeds reserved cost envelope.");
-  const extracted = await budgeted(budgetFile, async () => {
+  const extracted = await (budgetOverride ?? budgeted)(budgetFile, async () => {
     const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
