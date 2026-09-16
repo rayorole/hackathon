@@ -1,5 +1,6 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import { AuthShell } from "@/components/auth-shell";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { nl } from "@/lib/nl";
@@ -41,7 +42,7 @@ export default function Login() {
     }
   }
   return (
-    <main className="m-auto w-full max-w-md p-6">
+    <AuthShell>
       <Card>
         <CardHeader>
           <CardTitle>
@@ -85,6 +86,6 @@ export default function Login() {
           </a>
         </CardContent>
       </Card>
-    </main>
+    </AuthShell>
   );
 }

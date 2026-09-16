@@ -9,7 +9,7 @@ Repo context for coding agents and teammates. Derived from the PROV-AI participa
 cites the source page; where it states a team decision it says so.
 
 ## Current UX direction — task-first branch
-The user-approved task-first UX plan supersedes the dense example table in section7 below. Employee navigation is Start/Zaken/Wijzigingen/Historiek. Preserve focused proposal comparison and visible relevant/conflicting evidence; complete sources, registry data and audit remain available through disclosures. See docs/ux-task-first-plan.md and docs/ux-verification.md. Backend contracts and approval rules remain unchanged. This UX work is isolated on codex/task-first-ux; do not merge it into main without the user's direction.
+The user-approved task-first UX plan supersedes the dense example table in section7 below. Employee navigation is Start/Zaken/Wijzigingen/Historiek. Preserve focused proposal comparison and visible relevant/conflicting evidence; complete sources, registry data and audit remain available through disclosures. See docs/ux-task-first-plan.md and docs/ux-verification.md. Backend contracts and approval rules remain unchanged. User feedback rejected a bare text-heavy UI: preserve the focused workflows but use structured schedules, source cards, contact rows, registry grids and polished page layouts throughout. This UX work is isolated on codex/task-first-ux; do not merge it into main without the user's direction.
 
 ---
 

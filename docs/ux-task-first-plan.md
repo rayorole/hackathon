@@ -198,3 +198,7 @@ Use the shared database consciously: prefer read-only checks for existing decisi
 - [ ] First-time-user test completed; findings recorded honestly.
 - [ ] Both machines run the same merged revision and dedicated database configuration.
 - [ ] Demo frozen, video and submission completed by existing deadlines.
+
+## Visual refinement — accepted implementation direction
+
+The user rejected the initial bare text presentation. Keep the task-first hierarchy but give every data type a purposeful UI: weekly schedules, source cards, contact rows, registry grids and decision receipts. Apply the shared visual treatment across all routes, including account screens. See `ux-verification.md` for checks and limits. This supersedes any interpretation of simplification as removing visual structure or Ray’s component polish.

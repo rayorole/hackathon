@@ -1,4 +1,5 @@
 "use client";
+import { AuthShell } from "@/components/auth-shell";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -37,10 +38,12 @@ export default function Register() {
     }
   }
   return (
-    <main className="m-auto w-full max-w-md p-6">
+    <AuthShell>
       <Card>
         <CardHeader>
-          <CardTitle>Account aanvragen</CardTitle>
+          <CardTitle>
+            <h1>Account aanvragen</h1>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={submit} className="space-y-4">
@@ -78,6 +81,6 @@ export default function Register() {
           </a>
         </CardContent>
       </Card>
-    </main>
+    </AuthShell>
   );
 }

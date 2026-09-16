@@ -1,4 +1,5 @@
 "use client";
+import { BusinessAvatar, StatusPill } from "./data-display";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { type MapEntry, recordAddress, coordinateState } from "@/lib/map-data";
 import { toRecord } from "@/lib/officer-data";
@@ -26,7 +27,8 @@ export function MapRecordDetail({
         <ArrowLeft className="size-4" />
         {t.allResults}
       </Button>
-      <div>
+      <div className="space-y-3">
+        <BusinessAvatar name={record.naam ?? t.noName} />
         <h2 className="text-lg font-semibold">{record.naam ?? t.noName}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           {recordAddress(record)}
@@ -35,11 +37,11 @@ export function MapRecordDetail({
       {coordinateState(record) !== "valid" && (
         <p className="text-sm">{t.missing}</p>
       )}
-      <p className="text-sm">
+      <StatusPill state={pending ? "pending" : "neutral"}>
         {pending
           ? `${pending} ${pending === 1 ? "wijziging" : "wijzigingen"} te controleren`
           : u.noChange}
-      </p>
+      </StatusPill>
       <Button
         disabled={!detail}
         onClick={() => {

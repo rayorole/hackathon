@@ -22,6 +22,16 @@ import {
   proposalPresentation,
 } from "@/lib/review-presentation";
 import { uxNl as u } from "@/lib/nl";
+import {
+  FieldValue,
+  FieldIcon,
+  StatusPill,
+  BusinessAvatar,
+  PanelTitle,
+} from "./data-display";
+import { presentationNl as t } from "@/lib/nl";
+import { openingHours } from "@/lib/opening-hours";
+import { FileText, MapPin, ShieldCheck, ChevronDown } from "lucide-react";
 import { useDesk } from "./desk-context";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -36,11 +46,15 @@ export function Disclosure({
   children: ReactNode;
 }) {
   return (
-    <details className="border-t py-4">
-      <summary className="cursor-pointer text-sm font-medium marker:text-muted-foreground">
-        {title}
+    <details className="data-disclosure">
+      <summary className="flex cursor-pointer items-center justify-between gap-3 text-sm font-semibold">
+        <span>{title}</span>
+        <ChevronDown
+          aria-hidden
+          className="disclosure-chevron size-4 shrink-0"
+        />
       </summary>
-      <div className="mt-4 space-y-4 text-sm">{children}</div>
+      <div className="disclosure-body space-y-4 text-sm">{children}</div>
     </details>
   );
 }
@@ -50,53 +64,83 @@ export function Evidence({
   items: ReturnType<typeof evidenceGroups>;
 }) {
   return (
-    <div className="space-y-5">
+    <div className="evidence-grid">
       {items.map((item) => (
-        <div
-          key={item.evidenceIds.join(",")}
-          className="border-l-2 border-border pl-4"
-        >
-          <p className="mb-2 text-sm font-medium">
-            {item.source?.publisher ?? u.unknown}
-          </p>
-          <blockquote className="text-sm leading-relaxed whitespace-pre-wrap">
-            {item.excerpt}
-          </blockquote>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            <span>
-              {item.scope === "local"
-                ? u.local
-                : item.scope === "enterprise"
-                  ? u.enterprise
-                  : u.unknownScope}
+        <article key={item.evidenceIds.join(",")} className="evidence-card">
+          <header className="evidence-heading">
+            <span className="source-symbol">
+              <FileText aria-hidden className="size-4" />
             </span>
+            <div className="min-w-0 flex-1">
+              <h4>{item.source?.publisher ?? u.unknown}</h4>
+              <p>
+                {item.scope === "local"
+                  ? t.local
+                  : item.scope === "enterprise"
+                    ? t.enterprise
+                    : t.sourceUnknown}
+              </p>
+            </div>
+            {item.source && (
+              <a
+                className="source-link"
+                href={item.source.url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${u.source}: ${item.source.publisher}`}
+              >
+                <ExternalLink className="size-4" />
+                <span>{u.source}</span>
+              </a>
+            )}
+          </header>
+          <div className="evidence-content">
+            <FieldValue
+              field={item.field}
+              value={
+                normalizedField(item.field) === "openinghours" &&
+                openingHours(item.excerpt)
+                  ? item.excerpt
+                  : item.value || item.excerpt
+              }
+              showOriginal={false}
+            />
+            {item.value && item.value !== item.excerpt ? (
+              <details
+                className="source-excerpt"
+                open={normalizedField(item.field) !== "openinghours"}
+              >
+                <summary>{t.sourceText}</summary>
+                <blockquote>{item.excerpt}</blockquote>
+              </details>
+            ) : normalizedField(item.field) !== "openinghours" ? null : (
+              <details className="source-excerpt">
+                <summary>{t.sourceText}</summary>
+                <blockquote>{item.excerpt}</blockquote>
+              </details>
+            )}
+          </div>
+          <footer className="evidence-meta">
             <span>
               {u.fetched}{" "}
-              {item.source ? sourceDate(item.source.retrievedAt) : u.unknown}
+              <strong>
+                {item.source ? sourceDate(item.source.retrievedAt) : u.unknown}
+              </strong>
             </span>
             {item.source?.observedAt && (
               <span>
-                {u.observed} {sourceDate(item.source.observedAt)}
+                {u.observed}{" "}
+                <strong>{sourceDate(item.source.observedAt)}</strong>
               </span>
             )}
             {item.source?.cached && <span>{u.cached}</span>}
-          </div>
-          {item.source && (
-            <a
-              className="mt-2 inline-flex items-center gap-1 text-sm underline underline-offset-4"
-              href={item.source.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {u.source}
-              <ExternalLink className="size-3" />
-            </a>
-          )}
-        </div>
+          </footer>
+        </article>
       ))}
     </div>
   );
 }
+
 export function BusinessDetail({ detail }: { detail: Detail }) {
   const desk = useDesk();
   const e = detail.establishment;
@@ -114,25 +158,32 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
     ["telephone", "email", "website"].includes(normalizedField(item.field)),
   );
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-7">
+    <div className="business-detail mx-auto w-full max-w-6xl space-y-6">
       <Button variant="ghost" className="-ml-3" onClick={desk.back}>
         <ArrowLeft className="size-4" />
         {desk.screen === "review" ? u.backReview : u.back}
       </Button>
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{e.name}</h1>
-        <p className="mt-2 text-base text-muted-foreground">
-          {e.address.street} {e.address.houseNumber} · {e.address.postalCode}{" "}
-          {e.address.municipality}
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {u.activity[e.activityAssessment]}
-        </p>
+      <header className="business-heading">
+        <BusinessAvatar name={e.name} />
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight">{e.name}</h1>
+          <p className="mt-2 text-base text-muted-foreground">
+            {e.address.street} {e.address.houseNumber} · {e.address.postalCode}{" "}
+            {e.address.municipality}
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {u.activity[e.activityAssessment]}
+          </p>
+        </div>
+        <span className="business-heading-label">
+          <MapPin className="size-4" />
+          {t.localDetails}
+        </span>
       </header>
       {proposal ? (
         <>
           {e.proposals.length > 1 && (
-            <div>
+            <div className="proposal-switcher">
               <Label htmlFor="proposal-choice">{u.pending}</Label>
               <select
                 id="proposal-choice"
@@ -170,23 +221,30 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
           <p className="mt-2 text-sm text-muted-foreground">{u.noChangeNote}</p>
         </div>
       )}
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">{u.contact}</h2>
+      <section className="contact-panel surface-panel">
+        <PanelTitle
+          icon={<ShieldCheck className="size-4" />}
+          title={u.contact}
+        />
         {contact.length ? (
           contact.map(({ proposal: p, review }) => (
-            <p key={p.id} className="text-sm">
-              <span className="font-medium">{fieldLabel(p.field)}:</span>{" "}
-              {review.effectiveValue ?? u.unknown}{" "}
-              <span className="text-muted-foreground">· {u.approved}</span>
-            </p>
+            <div key={p.id} className="contact-row">
+              <div>
+                <span className="text-xs text-muted-foreground">
+                  {fieldLabel(p.field)}
+                </span>
+                <FieldValue field={p.field} value={review.effectiveValue} />
+              </div>
+              <StatusPill state="approved">{u.approved}</StatusPill>
+            </div>
           ))
         ) : (
-          <p className="text-sm text-muted-foreground">{u.noContact}</p>
+          <p className="p-5 text-sm text-muted-foreground">{u.noContact}</p>
         )}
       </section>
-      <div>
+      <div className="secondary-details">
         <Disclosure title={u.registry}>
-          <dl className="grid gap-4 sm:grid-cols-2">
+          <dl className="registry-grid">
             {[
               ["Vestigingsnummer", e.id],
               ["Ondernemingsnummer", e.parentEnterpriseId],
@@ -250,7 +308,7 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
         <Disclosure title={`${u.audit} (${detail.reviews.length})`}>
           {detail.reviews.length ? (
             [...detail.reviews].reverse().map((r) => (
-              <div key={r.reviewId} className="border-b pb-4">
+              <div key={r.reviewId} className="audit-entry">
                 <p className="font-medium">
                   {fieldLabel(
                     e.proposals.find((p) => p.id === r.proposalId)?.field ?? "",
@@ -351,34 +409,57 @@ function ProposalReview({
     }
   }
   return (
-    <section className="space-y-5" aria-labelledby="review-heading">
-      <h2 id="review-heading" className="text-lg font-semibold">
-        {fieldLabel(p.field)} {reviewed ? "" : u.check.toLowerCase()}
-      </h2>
-      <div className="grid gap-4 rounded-lg border bg-card p-5 sm:grid-cols-2">
-        <div>
-          <p className="text-sm text-muted-foreground">
-            {latest ? u.original : u.before}
-          </p>
-          <p className="mt-2 whitespace-pre-wrap text-base">
-            {p.before ?? u.unknown}
-          </p>
+    <section
+      className="review-workspace space-y-5"
+      aria-labelledby="review-heading"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2
+          id="review-heading"
+          className="flex items-center gap-2.5 text-lg font-semibold"
+        >
+          <FieldIcon field={p.field} className="size-5" />
+          {fieldLabel(p.field)} {reviewed ? "" : u.check.toLowerCase()}
+        </h2>
+        <StatusPill state={p.reviewState}>
+          {p.reviewState === "pending"
+            ? u.pendingStatus
+            : p.reviewState === "approved"
+              ? u.approved
+              : u.rejected}
+        </StatusPill>
+      </div>
+      <div
+        className={`comparison-grid ${!p.before ? "comparison-no-prior" : ""}`}
+      >
+        <div className="comparison-cell">
+          <p className="comparison-label">{latest ? u.original : u.before}</p>
+          <FieldValue field={p.field} value={p.before} />
         </div>
-        <div>
-          <p className="text-sm font-medium">{u.proposed}</p>
-          <p className="mt-2 whitespace-pre-wrap text-base">
-            {p.proposedValue ?? u.unknown}
-          </p>
+        <div className="comparison-cell comparison-proposed">
+          <p className="comparison-label">{u.proposed}</p>
+          <FieldValue field={p.field} value={p.proposedValue} />
         </div>
       </div>
       {latest && (
-        <p className="text-sm">
-          {latest.decision === "approve" ? u.approved : u.rejected}:{" "}
-          {latest.effectiveValue ?? "—"} ·{" "}
-          {new Date(latest.reviewedAt).toLocaleString("nl-BE")}
-        </p>
+        <div className="decision-receipt">
+          <StatusPill
+            state={latest.decision === "approve" ? "approved" : "rejected"}
+          >
+            {latest.decision === "approve" ? u.approved : u.rejected}
+          </StatusPill>
+          <time dateTime={latest.reviewedAt}>
+            {new Date(latest.reviewedAt).toLocaleString("nl-BE")}
+          </time>
+          {latest.decision === "approve" &&
+            latest.effectiveValue !== p.proposedValue && (
+              <div className="w-full">
+                <FieldValue field={p.field} value={latest.effectiveValue} />
+              </div>
+            )}
+        </div>
       )}
-      <div>
+      <div className="review-reason">
         <h3 className="text-sm font-semibold">{u.reason}</h3>
         <p className="mt-2 text-sm leading-relaxed">{p.reasonNl}</p>
       </div>
@@ -413,7 +494,12 @@ function ProposalReview({
           </p>
         )}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold">{u.evidence}</h3>
+        <h3 className="flex items-center justify-between text-sm font-semibold">
+          {u.evidence}
+          <span className="text-xs font-normal text-muted-foreground">
+            {evidence.length} {t.sourceCount}
+          </span>
+        </h3>
         {evidence.length ? (
           <Evidence items={evidence} />
         ) : (
@@ -452,7 +538,7 @@ function ProposalReview({
           )}
         </div>
       )}
-      <div className="space-y-4 border-t pt-5">
+      <div className="review-actions space-y-4">
         {reviewed || completed ? (
           <>
             <p className="flex items-center gap-2 font-medium">

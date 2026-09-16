@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Search,
   ArrowRight,
@@ -9,6 +9,22 @@ import {
   Map as MapIcon,
   List,
 } from "lucide-react";
+import {
+  Building2,
+  ClipboardCheck,
+  ShieldCheck,
+  MapPin,
+  CircleHelp,
+  Clock3,
+} from "lucide-react";
+import {
+  BusinessAvatar,
+  FieldIcon,
+  StatusPill,
+  PanelTitle,
+  FieldValue,
+} from "./data-display";
+import { presentationNl as t } from "@/lib/nl";
 import { api, fieldLabel, sourceDate } from "@/lib/officer-data";
 import { approvedChanges, evidenceGroups } from "@/lib/review-presentation";
 import { uxNl as u, nl } from "@/lib/nl";
@@ -55,11 +71,15 @@ function DeskShell({
   children: ReactNode;
 }) {
   const desk = useDesk();
+  const viewKey = `${desk.screen}:${desk.params.get("zaak") ?? ""}:${desk.params.get("voorstel") ?? ""}`;
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [viewKey]);
   return (
     <SidebarProvider
       defaultOpen={defaultOpen}
-      className="officer-desk task-first"
-      style={{ "--sidebar-width": "224px" } as React.CSSProperties}
+      className="officer-desk task-first premium-desk"
+      style={{ "--sidebar-width": "240px" } as React.CSSProperties}
     >
       <OfficerSidebar
         officer={desk.officer}
@@ -69,9 +89,15 @@ function DeskShell({
         onBeforeLeave={desk.guard}
       />
       <SidebarInset className="min-w-0 bg-background">
-        <header className="flex min-h-16 items-center gap-4 border-b px-4 md:px-8">
+        <header className="workspace-topbar flex min-h-16 items-center gap-4 border-b px-4 md:px-8">
           <SidebarTrigger />
-          <span className="text-sm text-muted-foreground">Schoten</span>
+          <div className="flex items-center gap-2 text-sm">
+            <MapPin className="size-4 text-muted-foreground" />
+            <span>Schoten</span>
+            <span className="hidden text-muted-foreground sm:inline">
+              / {u.titles[desk.screen]}
+            </span>
+          </div>
           <div className="ml-auto hidden sm:block">
             <DeskCommandBar
               records={desk.records}
@@ -93,10 +119,23 @@ function DeskShell({
           className="desk-main space-y-7 p-5 md:p-8 lg:p-10"
         >
           {!desk.selected && (
-            <header>
+            <header className="page-heading">
               <h1 className="text-2xl font-semibold tracking-tight">
                 {u.titles[desk.screen]}
               </h1>
+              {!["street", "map"].includes(desk.screen) && (
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  {desk.screen === "overview"
+                    ? t.startIntro
+                    : desk.screen === "review"
+                      ? t.reviewIntro
+                      : desk.screen === "history"
+                        ? t.historyIntro
+                        : desk.screen === "sources"
+                          ? t.sourcesIntro
+                          : ""}
+                </p>
+              )}
               {["street", "map"].includes(desk.screen) && (
                 <p className="mt-2 text-sm text-muted-foreground">
                   {u.coverage}
@@ -172,7 +211,7 @@ export function BusinessSearch({ submit = false }: { submit?: boolean }) {
   const desk = useDesk();
   return (
     <form
-      className="max-w-2xl space-y-2"
+      className="business-search w-full max-w-2xl space-y-2"
       onSubmit={(e) => {
         e.preventDefault();
         desk.navigate("street");
@@ -187,6 +226,7 @@ export function BusinessSearch({ submit = false }: { submit?: boolean }) {
           />
           <Input
             id="business-search"
+            aria-label={u.search}
             className="h-11 pl-10 text-base"
             placeholder="Bijvoorbeeld Paalstraat of Amplifon"
             value={desk.query}
@@ -235,68 +275,110 @@ export function OverviewView() {
   const desk = useDesk();
   const count = desk.queue.length;
   return (
-    <div className="max-w-3xl space-y-9">
-      <section className="rounded-xl border bg-card p-6 sm:p-7">
-        <h2 className="text-xl font-semibold">
-          {count === 0
-            ? u.noPending
-            : count === 1
-              ? "1 wijziging wacht op controle"
-              : `${count} wijzigingen wachten op controle`}
-        </h2>
-        <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          {count
-            ? "Bekijk wat mogelijk aangepast moet worden. U beslist op basis van de bronnen."
-            : u.noPendingNote}
-        </p>
-        {count > 0 && (
-          <Button
-            className="mt-5"
-            onClick={() => desk.openRecord(desk.queue[0], "review")}
-          >
-            {u.start}
-            <ArrowRight className="size-4" />
-          </Button>
-        )}
+    <div className="overview-layout">
+      <section className="start-focus surface-panel">
+        <div className="focus-top">
+          <span className="focus-icon">
+            <ClipboardCheck className="size-6" />
+          </span>
+          <StatusPill state={count ? "pending" : "approved"}>
+            {count ? u.pendingStatus : u.noPending}
+          </StatusPill>
+        </div>
+        <div className="focus-content">
+          <h2>
+            {count === 0
+              ? u.noPending
+              : count === 1
+                ? "1 wijziging wacht op controle"
+                : `${count} wijzigingen wachten op controle`}
+          </h2>
+          <p>
+            {count
+              ? "Bekijk wat mogelijk aangepast moet worden. U beslist op basis van de bronnen."
+              : u.noPendingNote}
+          </p>
+          {count > 0 && (
+            <Button
+              className="mt-5"
+              onClick={() => desk.openRecord(desk.queue[0], "review")}
+            >
+              {u.start}
+              <ArrowRight className="size-4" />
+            </Button>
+          )}
+        </div>
+        <div className="focus-footer">
+          <ShieldCheck className="size-4" />
+          <span>{t.reviewTipNote}</span>
+        </div>
       </section>
-      <BusinessSearch submit />
+      <section className="start-search surface-panel">
+        <div className="flex items-center gap-3">
+          <span className="section-icon">
+            <Search className="size-5" />
+          </span>
+          <h2 className="text-lg font-semibold">{t.searchTitle}</h2>
+        </div>
+        <p className="text-sm text-muted-foreground">{t.searchDescription}</p>
+        <BusinessSearch submit />
+        <button
+          className="explore-link"
+          onClick={() => desk.navigate("street")}
+        >
+          <Building2 className="size-4" />
+          {t.explore}
+          <span>{desk.records.length}</span>
+          <ArrowRight className="size-4" />
+        </button>
+      </section>
       {count > 0 && (
-        <section>
-          <h2 className="mb-3 text-base font-semibold">{u.pending}</h2>
+        <section className="start-queue surface-panel">
+          <PanelTitle
+            icon={<ClipboardCheck className="size-4" />}
+            title={t.reviewQueue}
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => desk.navigate("review")}
+            >
+              {t.viewAll}
+              <ArrowRight className="size-4" />
+            </Button>
+          </PanelTitle>
           <div className="divide-y">
             {desk.queue.slice(0, 3).map((r) => (
               <button
                 key={r.proposal!.id}
                 onClick={() => desk.openRecord(r, "review")}
-                className="flex w-full items-center gap-5 py-4 text-left hover:bg-muted/40"
+                className="business-item"
               >
+                <BusinessAvatar name={r.naam} />
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium">{r.naam}</p>
+                  <p className="font-semibold">{r.naam}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {r.adres}
                   </p>
                 </div>
-                <span className="text-sm">{fieldLabel(r.proposal!.field)}</span>
+                <span className="field-chip">
+                  <FieldIcon field={r.proposal!.field} />
+                  {fieldLabel(r.proposal!.field)}
+                </span>
                 <ArrowRight className="size-4 shrink-0" />
               </button>
             ))}
           </div>
-          {count > 3 && (
-            <Button variant="link" onClick={() => desk.navigate("review")}>
-              {u.allChanges}
-            </Button>
-          )}
         </section>
       )}
-      <p className="text-sm text-muted-foreground">
-        {u.coverage}{" "}
-        <button
-          className="underline underline-offset-4"
-          onClick={() => desk.navigate("sources")}
-        >
+      <aside className="coverage-strip">
+        <CircleHelp className="size-5 shrink-0" />
+        <p>{u.coverage}</p>
+        <button onClick={() => desk.navigate("sources")}>
           {u.about}
+          <ArrowRight className="size-4" />
         </button>
-      </p>
+      </aside>
     </div>
   );
 }
@@ -311,50 +393,58 @@ export function StreetView() {
   );
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-5">
-        <BusinessSearch />
-        <BusinessViewTabs />
-      </div>
-      <details className="max-w-xl">
-        <summary className="cursor-pointer text-sm underline underline-offset-4">
-          {u.filters}
-          {desk.street ? ` · ${desk.street}` : ""}
-        </summary>
-        <label className="mt-3 block text-sm">
-          {u.street}
-          <select
-            className="ml-3 rounded border bg-background px-3 py-2"
-            value={desk.street}
-            onChange={(e) => desk.setStreet(e.target.value)}
-          >
-            <option value="">{u.allStreets}</option>
-            {desk.streets.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-        </label>
-      </details>
-      {(desk.query || desk.street) && (
-        <div className="flex flex-wrap gap-3 text-sm">
-          <span>
-            {desk.query ? `Zoeken: ${desk.query}` : ""}{" "}
-            {desk.street ? `· ${desk.street}` : ""}
-          </span>
-          <button
-            className="underline"
-            onClick={() =>
-              desk.updateParams(
-                { q: null, street: null, page: null },
-                undefined,
-                true,
-              )
-            }
-          >
-            {u.clear}
-          </button>
+      <div className="directory-toolbar surface-panel">
+        <div className="flex flex-wrap items-end justify-between gap-5">
+          <BusinessSearch />
+          <BusinessViewTabs />
         </div>
-      )}
-      <div className="overflow-hidden rounded-lg border bg-card">
+        <details className="max-w-xl">
+          <summary className="cursor-pointer text-sm underline underline-offset-4">
+            {u.filters}
+            {desk.street ? ` · ${desk.street}` : ""}
+          </summary>
+          <label className="mt-3 block text-sm">
+            {u.street}
+            <select
+              className="ml-3 rounded border bg-background px-3 py-2"
+              value={desk.street}
+              onChange={(e) => desk.setStreet(e.target.value)}
+            >
+              <option value="">{u.allStreets}</option>
+              {desk.streets.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </select>
+          </label>
+        </details>
+        {(desk.query || desk.street) && (
+          <div className="flex flex-wrap gap-3 text-sm">
+            <span>
+              {desk.query ? `Zoeken: ${desk.query}` : ""}{" "}
+              {desk.street ? `· ${desk.street}` : ""}
+            </span>
+            <button
+              className="underline"
+              onClick={() =>
+                desk.updateParams(
+                  { q: null, street: null, page: null },
+                  undefined,
+                  true,
+                )
+              }
+            >
+              {u.clear}
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="surface-panel data-table-panel">
+        <PanelTitle
+          icon={<Building2 className="size-4" />}
+          title={t.allRecords}
+        >
+          <span className="count-label">{desk.rows.length}</span>
+        </PanelTitle>
         <Table>
           <TableHeader>
             <TableRow>
@@ -372,10 +462,11 @@ export function StreetView() {
                 <TableRow key={r.id}>
                   <TableCell className="max-w-80 whitespace-normal px-5 py-4">
                     <button
-                      className="text-left text-sm font-medium underline-offset-4 hover:underline"
+                      className="flex items-center gap-3 text-left text-sm font-semibold hover:text-primary"
                       onClick={() => desk.openRecord(r)}
                     >
-                      {r.naam}
+                      <BusinessAvatar name={r.naam} />
+                      <span>{r.naam}</span>
                     </button>
                   </TableCell>
                   <TableCell className="whitespace-normal text-sm">
@@ -384,7 +475,7 @@ export function StreetView() {
                   <TableCell className="whitespace-normal text-sm">
                     {pending.length > 0 ? (
                       <button
-                        className="underline underline-offset-4"
+                        className="field-chip"
                         onClick={() => desk.openRecord(r)}
                       >
                         {pending.length === 1
@@ -459,7 +550,7 @@ export function StreetView() {
 export function ReviewView() {
   const desk = useDesk();
   return (
-    <div className="max-w-3xl space-y-5">
+    <div className="review-queue space-y-5">
       {desk.queue.length ? (
         <>
           <p className="text-sm text-muted-foreground">
@@ -467,21 +558,23 @@ export function ReviewView() {
             {desk.queue.length === 1 ? "voorstel" : "voorstellen"} · U beslist
             één wijziging tegelijk.
           </p>
-          <div className="divide-y rounded-lg border bg-card px-5">
+          <div className="divide-y surface-panel">
             {desk.queue.map((r) => (
               <button
                 key={r.proposal!.id}
-                className="flex w-full items-center gap-5 py-5 text-left"
+                className="business-item"
                 onClick={() => desk.openRecord(r, "review")}
               >
-                <div className="flex-1">
-                  <p className="font-medium">{r.naam}</p>
+                <BusinessAvatar name={r.naam} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{r.naam}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {r.adres}
                   </p>
-                  <p className="mt-2 text-sm">
+                  <span className="field-chip mt-3">
+                    <FieldIcon field={r.proposal!.field} />
                     {fieldLabel(r.proposal!.field)} controleren
-                  </p>
+                  </span>
                 </div>
                 <ArrowRight className="size-4" />
               </button>
@@ -490,9 +583,12 @@ export function ReviewView() {
         </>
       ) : (
         <>
-          <h2 className="text-lg font-medium">{u.noPending}</h2>
-          <p className="text-sm text-muted-foreground">{u.noPendingNote}</p>
-          <Button onClick={() => desk.navigate("street")}>{u.search}</Button>
+          <div className="empty-state">
+            <ShieldCheck className="size-8" />
+            <h2 className="text-lg font-medium">{u.noPending}</h2>
+            <p className="text-sm text-muted-foreground">{u.noPendingNote}</p>
+            <Button onClick={() => desk.navigate("street")}>{u.search}</Button>
+          </div>
         </>
       )}
     </div>
@@ -546,7 +642,18 @@ export function HistoryView() {
         {u.export}
       </Button>
       {exportOpen && (
-        <section className="max-w-2xl space-y-4 rounded-lg border bg-card p-5">
+        <section className="export-panel surface-panel max-w-2xl space-y-4 p-6">
+          <div className="flex gap-3">
+            <span className="section-icon">
+              <Download className="size-5" />
+            </span>
+            <div>
+              <h2 className="font-semibold">{t.downloadTitle}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t.downloadDescription}
+              </p>
+            </div>
+          </div>
           <Label htmlFor="export-street">{u.exportScope}</Label>
           <select
             id="export-street"
@@ -580,7 +687,13 @@ export function HistoryView() {
           <p>{u.historyNote}</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="surface-panel data-table-panel">
+          <PanelTitle
+            icon={<Clock3 className="size-4" />}
+            title={t.historyTotal}
+          >
+            <span className="count-label">{history.length}</span>
+          </PanelTitle>
           <Table>
             <TableHeader>
               <TableRow>
@@ -619,12 +732,23 @@ export function HistoryView() {
                   </TableCell>
                   <TableCell className="max-w-64 whitespace-normal">
                     {fieldLabel(p?.field ?? "")}
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {r.effectiveValue ?? "—"}
-                    </p>
+                    <div className="history-value">
+                      <FieldValue
+                        field={p?.field ?? ""}
+                        value={
+                          r.decision === "approve"
+                            ? r.effectiveValue
+                            : p?.proposedValue
+                        }
+                      />
+                    </div>
                   </TableCell>
                   <TableCell>
-                    {r.decision === "approve" ? u.approved : u.rejected}
+                    <StatusPill
+                      state={r.decision === "approve" ? "approved" : "rejected"}
+                    >
+                      {r.decision === "approve" ? u.approved : u.rejected}
+                    </StatusPill>
                   </TableCell>
                   <TableCell className="text-sm">
                     {new Date(r.reviewedAt).toLocaleString("nl-BE")}
@@ -646,35 +770,65 @@ export function SourcesView() {
     ).values(),
   ];
   return (
-    <div className="max-w-3xl space-y-6">
-      <p className="text-base leading-relaxed">
-        {u.coverage} De aangeleverde steekproef bevat 1.000 registerrecords. In
-        deze werklijst staan {dossiers.length} lokale vestigingen; dit is geen
-        volledige lijst van alle actieve zaken.
-      </p>
-      <p className="text-sm">
-        Bij {dossiers.filter((d) => !d.establishment.parent).length} vestigingen
-        is het volledige ondernemingsdossier niet gekoppeld. Een ontbrekend
-        dossier of een ontbrekende website betekent niet dat een zaak gesloten
-        is.
-      </p>
-      <p className="text-sm">
-        Ophaaldatum, waarnemingsdatum en registerpeildatum zijn verschillende
-        datums. Een vandaag opgehaalde website bewijst niet dat de zaak vandaag
-        fysiek bezocht is.
-      </p>
-      <p className="text-sm">{u.officialNote}</p>
-      <a
-        className="text-sm underline"
-        href="https://data.vlaanderen.be/id/licentie/modellicentie-gratis-hergebruik/v1.0"
-        target="_blank"
-        rel="noreferrer"
-      >
-        Modellicentie Gratis Hergebruik v1.0
-      </a>
+    <div className="sources-layout space-y-6">
+      <section className="surface-panel">
+        <PanelTitle
+          icon={<Building2 className="size-4" />}
+          title={t.coverageTitle}
+        />
+        <div className="coverage-summary">
+          <div>
+            <strong>{dossiers.length}</strong>
+            <span>{t.currentSample}</span>
+          </div>
+          <div>
+            <strong>
+              {dossiers.filter((d) => d.establishment.parent).length}
+            </strong>
+            <span>{t.linked}</span>
+          </div>
+          <div>
+            <strong>
+              {dossiers.filter((d) => !d.establishment.parent).length}
+            </strong>
+            <span>{t.missing}</span>
+          </div>
+        </div>
+        <p className="border-t p-5 text-sm leading-relaxed text-muted-foreground">
+          De aangeleverde steekproef bevat 1.000 registerrecords, waaronder{" "}
+          {dossiers.length} lokale vestigingen. {t.coverageNote}
+        </p>
+      </section>
+      <section className="surface-panel">
+        <PanelTitle icon={<Clock3 className="size-4" />} title={t.dates} />
+        <dl className="date-explainer">
+          {[
+            [t.fetched, t.fetchedNote],
+            [t.observed, t.observedNote],
+            [t.snapshot, t.snapshotNote],
+          ].map(([label, note]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{note}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+      <aside className="coverage-strip">
+        <ShieldCheck className="size-5 shrink-0" />
+        <p>{u.officialNote}</p>
+        <a
+          className="text-sm underline"
+          href="https://data.vlaanderen.be/id/licentie/modellicentie-gratis-hergebruik/v1.0"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Modellicentie Gratis Hergebruik v1.0
+        </a>
+      </aside>
       <Disclosure title={`Bronnenregister (${sources.length})`}>
         {sources.map((s) => (
-          <div key={s.id} className="space-y-2 border-b pb-4">
+          <div key={s.id} className="source-register-entry space-y-2">
             <a
               className="underline"
               href={s.url}

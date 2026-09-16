@@ -1,5 +1,5 @@
 export const nl = {
-  title: "KBO Evidence Desk",
+  title: "Aanmelden bij Straatbeeld",
   login: "Aanmelden",
   email: "E-mailadres",
   password: "Wachtwoord",
@@ -492,4 +492,76 @@ export const uxNl = {
   nextPage: "Volgende pagina",
   filters: "Filters",
   street: "Straat",
+} as const;
+
+export const presentationNl = {
+  notKnown: "Nog niet bekend",
+  notStated: "Niet vermeld",
+  hours: "Openingsuren",
+  day: "Dag",
+  closed: "Gesloten",
+  appointment: "Op afspraak",
+  original: "Oorspronkelijke tekst",
+  sourceText: "Volledig bronfragment",
+  sourceValue: "Vermeld in deze bron",
+  local: "Deze vestiging",
+  enterprise: "Onderneming",
+  sourceUnknown: "Locatie niet vastgesteld",
+  searchTitle: "Vind een zaak in Schoten",
+  searchDescription: "Zoek op naam, adres of ondernemingsnummer.",
+  worklist: "Uw werklijst",
+  explore: "Verken de zaken",
+  currentSample: "Vestigingen in de steekproef",
+  directory: "Bedrijvengids",
+  reviewIntro:
+    "Controleer de voorgestelde wijzigingen met de bijbehorende bronnen.",
+  historyIntro:
+    "Elke beslissing blijft terug te vinden. Exporteer alleen de goedgekeurde gegevens.",
+  sourcesIntro:
+    "Waar onze gegevens vandaan komen, en wat ze wel en niet vertellen.",
+  startIntro:
+    "Een helder beeld van de lokale economie begint met gecontroleerde gegevens.",
+  noPendingChanges: "Geen open voorstellen",
+  details: "Dossier bekijken",
+  reviewQueue: "Klaar voor uw beoordeling",
+  fullRecord: "Bedrijfsdossier",
+  officialRecords: "Officiële registratie",
+  decision: "Uw beslissing",
+  comparison: "Gegevens vergelijken",
+  sourceCount: "bronnen",
+  sourceEvidence: "Onderbouwing",
+  registrationComplete: "Account geregistreerd",
+  requestAccess: "Vraag medewerkerstoegang aan",
+  welcome: "Welkom bij Straatbeeld",
+  authIntro: "Uw gemeente. Uw lokale zaken. Eén betrouwbare werklijst.",
+  authDescription:
+    "Vergelijk bedrijfsgegevens, bekijk de bronnen en houd samen het straatbeeld actueel.",
+  authFooter: "Voor medewerkers lokale economie",
+  sample: "Steekproef · Schoten",
+  registered: "Geregistreerd",
+  linked: "Ondernemingsdossier gekoppeld",
+  missing: "Nog niet gekoppeld",
+  dates: "Zo leest u de datums",
+  fetched: "Opgehaald",
+  observed: "Waargenomen",
+  snapshot: "Registerpeildatum",
+  fetchedNote: "Wanneer de bron voor het laatst is opgehaald.",
+  observedNote: "Wanneer de informatie volgens de bron werd vastgesteld.",
+  snapshotNote:
+    "De datum waarop de officiële registergegevens betrekking hebben.",
+  reviewTip: "U houdt de regie",
+  reviewTipNote:
+    "Een voorstel verandert pas uw werklijst na uw goedkeuring. De officiële KBO blijft ongewijzigd.",
+  coverageTitle: "Een steekproef, geen volledig register",
+  coverageNote:
+    "Registratie bewijst geen actuele activiteit. Ontbrekende informatie betekent niet dat een zaak gesloten is.",
+  approvedData: "Goedgekeurde gegevens",
+  sourceRegister: "Bronnenregister",
+  viewAll: "Alles bekijken",
+  localDetails: "Lokale vestiging",
+  allRecords: "Zaken in uw selectie",
+  historyTotal: "Vastgelegde beslissingen",
+  downloadTitle: "Gecontroleerde werklijst exporteren",
+  downloadDescription:
+    "Kies de straat of neem alle goedgekeurde wijzigingen in Schoten mee.",
 } as const;
