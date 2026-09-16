@@ -25,3 +25,14 @@ Optional Intelead reuse is controlled by Jochem and organiser eligibility. Never
 ## Acceptance
 
 Real sample data returns through list/detail; persistent review rejects stale versions; unapproved changes never export; refreshed data cannot erase human decisions. API does not expose privileged writes publicly. `npm run check`, build, and a real browser-to-DB workflow pass before marking done.
+
+## Real KBO import implemented
+
+`npm run db:import:kbo` validates/checksums and previews the sample without writes.
+`npm run db:import:kbo -- --parents --write` additionally looks up missing Paalstraat parents through official VKBO and inserts missing cases into the dedicated project. Existing cases are never overwritten, including their evidence, parent snapshots and review history. Subsequent source updates need a separate version-checked refresh operation; rerunning this importer does not update existing records.
+
+Imported 543 establishments from 1000 rows (457 enterprise records retained as parent lookup input). Paalstraat contains 27 establishments, distinct from its 35 total sample rows. 28 parent links exist within the sample; 21 Paalstraat parents were fetched live, six remain unresolved. Amplifon establishment `2296242396` links to enterprise `0418975266` at a separate registered address in Dilbeek. Real cases have no proposed corrections until actual evidence supports them. Legal status is not copied from parent onto establishment; registration does not establish current activity.
+
+`data/derived/parents/` retains original fetched parent responses/provenance locally and is ignored by Git. The shared Supabase case includes its exact source URL and retrieval time. Registry snapshot date remains unknown. Source dates and meaningful contact/activity/date facts are retained as evidence; sentinel dates and whitespace-only fields become unknown. Bus numbers are preserved as evidence because the unchanged address contract has no bus field. Coordinates are not currently exposed by that contract.
+
+Live list/export excludes fictional demo cases. Direct demo detail and fixture mode remain available for UI testing. The live list still caps at1000 and never claims municipality completeness.

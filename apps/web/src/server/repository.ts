@@ -22,6 +22,7 @@ export async function listDetails(filters: Filters = {}): Promise<Detail[]> {
   let q = supabaseAdmin()
     .from("straatbeeld_cases")
     .select("detail")
+    .eq("detail->establishment->>isDemo", "false")
     .order("id");
   if (filters.municipality) q = q.eq("municipality", filters.municipality);
   if (filters.street) q = q.eq("street", filters.street);
@@ -42,7 +43,7 @@ export async function list(filters: Filters = {}) {
       ? {
           mode: "supabase" as const,
           labelNl:
-            "Projectdatabase — maximaal 1000 records per aanvraag; controleer brondata per record",
+            "Gedeeltelijke VKBO-steekproef van 7 september 2026; maximaal 1000 vestigingen per aanvraag. Actuele lokale activiteit nog niet vastgesteld. Raadpleeg de datum per bron.",
           completeMunicipality: false,
           registrySnapshotDate: null,
         }

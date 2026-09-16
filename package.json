@@ -13,13 +13,14 @@
     "dev": "npm run dev -w @straatbeeld/web",
     "build": "npm run build -w @straatbeeld/web",
     "start": "npm run start -w @straatbeeld/web",
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present && tsc -p scripts/tsconfig.json",
     "lint": "npm run lint -w @straatbeeld/web",
     "test": "tsx --test packages/contracts/tests/*.test.ts",
     "check": "npm run typecheck && npm run lint && npm test",
     "db:check": "node --env-file=apps/web/.env.local --import tsx scripts/check-supabase.ts",
     "db:seed": "node --env-file=apps/web/.env.local --import tsx scripts/seed-supabase.ts",
-    "format": "prettier --write apps/web/src packages/contracts/src packages/contracts/tests scripts docs/*.md README.md AGENTS.md"
+    "format": "prettier --write apps/web/src packages/contracts/src packages/contracts/tests scripts docs/*.md README.md AGENTS.md",
+    "db:import:kbo": "node --env-file=apps/web/.env.local --import tsx scripts/import-kbo.ts"
   },
   "devDependencies": {
     "@types/node": "22.20.3",

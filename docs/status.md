@@ -22,3 +22,11 @@
 ## Integration checkpoints
 
 First real record through the stable API within 60–75 minutes of independent coding. Merge working slices frequently. Both review the flow with an officer before scope freeze. Freeze around 15:00, video/upload buffer, submit by 16:15 (hard 16:30 Brussels). Original clock does not restart.
+
+## Real-data slice — 16 September
+
+- Implemented checksum-verified, validated and additive KBO importer; scripts are included in typechecking.
+- Imported 543 real establishments; 27 real Paalstraat establishments are available through the canonical API. Live list/export excludes demo rows.
+- 28 sample parent links plus21 fresh Paalstraat parent lookups; six lookups remain unresolved. Parent/source timestamps stay separate from sample data.
+- No AI evidence or correction proposals invented. Real records initially have insufficient activity evidence; repeat import preserves existing records and reviews.
+- Next: source retrieval/analysis and version-safe refresh, then connect Ray’s page designs to the canonical data contract. AI provider credential/spend limit requested; not configured at this checkpoint.
