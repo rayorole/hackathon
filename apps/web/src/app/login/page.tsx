@@ -1,7 +1,6 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import { AuthShell } from "@/components/auth-shell";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { nl } from "@/lib/nl";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 export default function Login() {
-  const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -33,8 +31,9 @@ export default function Login() {
         setError(nl.failed);
         return;
       }
-      router.replace("/");
-      router.refresh();
+      // Start a fresh document with the session cookies written by Supabase.
+      // Client navigation can reuse a protected route cached before sign-in.
+      window.location.replace("/");
     } catch {
       setError(nl.failed);
     } finally {
