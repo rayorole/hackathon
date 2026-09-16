@@ -148,6 +148,12 @@ export function sourceSnippets(text: string) {
   }
   return result;
 }
+export function validFieldValue(field:string,value:string) {
+ if(field==='email')return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+ if(field==='telephone')return /[0-9]/.test(value) && value.replace(/\D/g,'').length>=8 && /^[+0-9().\s/;,-]+$/.test(value);
+ if(field==='openingHours')return /\d{1,2}[:hu]\d{2}|gesloten|closed|ferm[eé]|afspraak|appointment/i.test(value);
+ return true;
+}
 export function groundSelection(documents: SourceDocument[], input: unknown) {
   const parsed = selectionSchema.parse(input),
     seen = new Set<string>();
@@ -157,6 +163,7 @@ export function groundSelection(documents: SourceDocument[], input: unknown) {
         excerpt = doc ? sourceSnippets(doc.text)[c.snippetIndex] : undefined;
       const unique = c.sourceId + ":" + c.field;
       if (
+        !validFieldValue(c.field,c.value) ||
         !excerpt ||
         !normalizedText(excerpt).includes(normalizedText(c.value)) ||
         seen.has(unique)

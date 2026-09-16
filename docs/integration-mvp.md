@@ -26,7 +26,7 @@ The already-applied `straatbeeld_cases` migration is included for reproducibilit
 
 ## AI budget
 
-Paid research uses the shared Supabase budget with atomic reservations and a fixed $10 total cap, including previous local usage. Do not initialize a second budget. Ray needs only the existing Supabase environment for the UI; the hosted research worker is independent of his Vercel account. See `docs/municipal-monitoring.md` for activation status and operator instructions.
+Paid research uses the shared Supabase budget with atomic reservations and a fixed $50 total cap, including previous local usage. Do not initialize a second budget. Ray needs only the existing Supabase environment for the UI; the hosted research worker is independent of his Vercel account. See `docs/municipal-monitoring.md` for activation status and operator instructions.
 
 ## Verify
 

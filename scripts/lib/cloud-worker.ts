@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { detailSchema } from "../../packages/contracts/src/index";
 import { research, targets } from "./research";
 import { publicHtml,parseDirectory,matchDirectory } from "./discovery";
+import { discoverWeb } from "./web-discovery";
 import { cloudBudget } from "./cloud-budget";
 export async function runMunicipalPass(db:SupabaseClient){
 const started=Date.now();
@@ -45,7 +46,7 @@ async function discover() {
       found = matchDirectory(d, entries);
     const sources = [
       ...new Map(
-        [...found, ...(targets[d.establishment.id] ?? [])].map((x) => [
+        [...found, ...(targets[d.establishment.id] ?? []), ...(previous.get(d.establishment.id)?.sources ?? []).filter((source: {discovered?: boolean}) => source.discovered)].map((x) => [
           x.url,
           x,
         ]),
@@ -92,7 +93,7 @@ async function tick() {
   const monitoring=await db.from("straatbeeld_monitoring").select("directory_checked_at").eq("municipality",municipality).single();
   if(monitoring.error)throw monitoring.error;
   if(!monitoring.data.directory_checked_at||Date.now()-Date.parse(monitoring.data.directory_checked_at)>86400000)await discover();
-  for (let i = 0; i < 10 && Date.now()-started<65000; i++) {
+  for (let i = 0; i < 10 && Date.now()-started<35000; i++) {
     await rpc("straatbeeld_plan", {
       p_municipality: municipality,
       p_worker: worker,
@@ -115,15 +116,27 @@ async function tick() {
         .single();
       if (read.error) throw read.error;
       version = read.data.version;
+      const establishment=detailSchema.parse(read.data.detail).establishment;
+      const peers=await db.from('straatbeeld_cases').select('id,detail').eq('municipality',municipality).eq('detail->establishment->address->>street',establishment.address.street).eq('detail->establishment->address->>houseNumber',establishment.address.houseNumber).neq('id',establishment.id);
+      if(peers.error)throw peers.error;
+      const normalizeName=(name:string)=>name.toLowerCase().replace(/[^a-z0-9]/g,'');
+      const ambiguous=peers.data.some(peer=>normalizeName(peer.detail.establishment.name)===normalizeName(establishment.name));
+
+      if (!job.sources.length && (!job.discovery_checked_at || Date.now()-Date.parse(job.discovery_checked_at)>30*86400000)) {
+        const found=await discoverWeb(detailSchema.parse(read.data.detail),db);
+        const savedSources=await db.from("straatbeeld_research_queue").update({sources:found,discovery_checked_at:new Date().toISOString()}).eq("establishment_id",job.establishment_id).eq("claim_id",job.claim_id).eq("status","running").select("establishment_id");
+        if(savedSources.error||!savedSources.data?.length)throw new Error("Discovery lease lost");
+        job.sources=found;
+      }
       if (!job.sources.length) {
         outcome = "no_source";
         days = 30;
         message =
-          "Geen eenduidige bron gevonden in de aangesloten handelaarsgids. Dit zegt niets over sluiting.";
+          "Gericht op het web gezocht, maar geen bruikbare bron gevonden. Dit zegt niets over sluiting.";
       } else {
         const result = await research(
           detailSchema.parse(read.data.detail),
-          job.sources,
+          job.sources.map((source: import("./discovery").Target)=>({...source,...(ambiguous && establishment.parentEnterpriseId ? {requireEnterpriseNumber:establishment.parentEnterpriseId}: {})})),
           async () => {
             const c = await db
               .from("straatbeeld_monitoring")
