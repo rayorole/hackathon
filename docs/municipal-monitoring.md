@@ -23,7 +23,7 @@ The additive `20260916121111_municipal_monitoring.sql` was applied transactional
 
 ## Officer flow and contracts
 
-Start retains review and search as the primary actions. A municipal monitoring panel displays enrolled, source-checked, waiting and unresolved counts, worker status and a searchable paginated queue. Progress concerns research, never proven trading activity. Pause/resume is available in the planning disclosure; already-running source work may finish. Other pages retain their existing structured UI.
+Start restores Ray’s main-branch illustrated search hero and review list. Research appears only as a quiet status/link beneath that list. The separate /onderzoek page, accessible from the sidebar, contains a compact summary/table, search, status filter, pagination and pause/resume. Per-case explanations and planning/scope are expandable; source-check counts never imply proven trading activity. Already-running work may finish after pausing.
 
 - `GET /api/monitoring`: `monitoringSchema` in `packages/contracts`; the `jobs` array contains the bounded sample's queue, without source text/secrets.
 - `POST /api/monitoring`: `{ "paused": true | false }`; officer authorization and same-origin checks. Does not reset quota.

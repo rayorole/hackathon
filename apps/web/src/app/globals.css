@@ -489,3 +489,24 @@
 .auth-form [data-slot="card"] { gap: 12px; }
 .schedule-annotation { margin-top: 12px; padding: 9px 11px; border-radius: 6px; border: 1px solid var(--border); background: var(--muted); font-size: .75rem; line-height: 1.6; }
 .evidence-meta { font-size: .6875rem; }
+
+/* Preserve Ray’s search-first home; monitoring is secondary. */
+.overview-layout { grid-template-columns: minmax(0, 1fr); }
+.home-search-hero { position: relative; isolation: isolate; display: flex; align-items: center; min-height: 430px; overflow: hidden; border: 1px solid var(--border); border-radius: 18px; background: var(--card); }
+.home-hero-image { object-fit: cover; object-position: center 60%; z-index: -2; }
+.home-search-hero::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, var(--card) 0%, color-mix(in oklch, var(--card) 96%, transparent) 28%, color-mix(in oklch, var(--card) 65%, transparent) 51%, transparent 82%); }
+.home-hero-content { width: min(100%, 620px); padding: 48px; }
+.home-hero-content h1 { font-size: clamp(1.6rem, 2.5vw, 2.25rem); line-height: 1.2; font-weight: 600; letter-spacing: -.04em; }
+.home-hero-content > p { margin-top: 14px; font-size: .875rem; color: var(--muted-foreground); line-height: 1.6; }
+.home-hero-content .business-search { margin-top: 28px; }
+.home-hero-content .business-search > p { display: none; }
+.home-hero-content .business-search [data-slot="input"] { height: 46px; background: var(--card); }
+.home-hero-content .business-search button[type="submit"] { height: 46px; }
+.home-browse-button { margin-top: 16px; background: var(--card); }
+@media (max-width: 760px) {
+  .home-search-hero { min-height: 390px; align-items: flex-end; }
+  .home-hero-content { width: 100%; padding: 28px 22px; }
+  .home-search-hero::before { background: linear-gradient(0deg, var(--card) 0%, color-mix(in oklch, var(--card) 96%, transparent) 38%, color-mix(in oklch, var(--card) 30%, transparent) 100%); }
+}
+
+.home-hero-content .business-search > label { display: none; }

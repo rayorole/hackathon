@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { monitoringSchema, type Monitoring } from "@straatbeeld/contracts";
-import { Activity, Pause, Play, Radar, ChevronDown } from "lucide-react";
+import { Pause, Play, ArrowRight, ChevronDown } from "lucide-react";
 import { useDesk } from "./desk-context";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -13,7 +13,7 @@ const labels: Record<string, string> = {
   failed: "Opnieuw proberen",
   budget_blocked: "Wacht op onderzoeksruimte",
 };
-export function MunicipalMonitoring() {
+export function MunicipalMonitoring({ compact = false }: { compact?: boolean }) {
   const desk = useDesk();
   const [filter, setFilter] = useState(""),
     [query, setQuery] = useState(""),
@@ -71,202 +71,67 @@ export function MunicipalMonitoring() {
           .toLocaleLowerCase("nl-BE")
           .includes(query.toLocaleLowerCase("nl-BE")),
     ) ?? [];
+  const status = error ? "Status niet beschikbaar" : !data ? "Status ophalen…" : data.paused ? "Onderzoek gepauzeerd" : data.online ? "Automatisch onderzoek actief" : "Onderzoek tijdelijk niet bereikbaar";
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(jobs.length / 10) - 1));
+  const date = (value: string | null) => value ? new Date(value).toLocaleString("nl-BE", {day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "Nog niet gecontroleerd";
+  const statusDot = <span aria-hidden="true" className={`size-2 shrink-0 rounded-full ${!error && data?.online && !data.paused ? "bg-primary" : "bg-muted-foreground"}`} />;
+  if (compact) return (
+    <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-sm">
+      <span className="flex items-center gap-2 text-muted-foreground">{statusDot}{status}</span>
+      <Button variant="ghost" size="sm" onClick={() => desk.navigate("research")}>Onderzoek bekijken<ArrowRight className="size-4" /></Button>
+    </div>
+  );
   return (
-    <section
-      className="surface-panel col-span-full overflow-hidden"
-      style={{ gridColumn: "1 / -1" }}
-      aria-label="Gemeentelijk onderzoek"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b p-5 md:p-6">
-        <div className="flex items-center gap-3">
-          <span className="section-icon">
-            <Radar className="size-5" />
-          </span>
-          <div>
-            <h2 className="font-semibold">Onderzoek in heel Schoten</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Alle bekende zaken in één periodieke onderzoekswachtrij.
-            </p>
-          </div>
+    <section className="space-y-5" aria-label="Gemeentelijk onderzoek">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="flex items-center gap-2 text-sm font-medium">{statusDot}{status}</p>
+          <p className="mt-2 text-sm text-muted-foreground">We vergelijken de bekende zaken in Schoten met openbare bronnen.</p>
         </div>
-        <span className="flex items-center gap-2 text-sm">
-          <Activity className="size-4" />
-          {!data
-            ? "Status ophalen…"
-            : !data.online
-              ? "Worker offline"
-              : data.paused
-                ? "Gepauzeerd"
-                : "Onderzoek actief"}
-        </span>
+        <Button variant="outline" size="sm" disabled={busy || !data?.total} onClick={toggle}>
+          {data?.paused ? <Play className="size-4" /> : <Pause className="size-4" />}{data?.paused ? "Hervatten" : "Pauzeren"}
+        </Button>
       </div>
-      {error && (
-        <p role="alert" className="px-6 pt-4 text-sm text-destructive">
-          {error}
-        </p>
-      )}
-      {data && (
-        <>
-          <div className="grid grid-cols-2 gap-4 p-5 md:grid-cols-4 md:p-6">
-            {[
-              [data.total, "Zaken in beeld"],
-              [data.checked, "Bronnen gecontroleerd"],
-              [data.queued + data.running, "In onderzoekswachtrij"],
-              [
-                data.noSource + data.failed + data.blocked,
-                "Vragen nog aandacht",
-              ],
-            ].map(([value, label]) => (
-              <div key={label} className="rounded-xl border bg-muted/30 p-4">
-                <p className="text-2xl font-semibold tabular-nums">{value}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{label}</p>
-              </div>
+      {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+      {!data && !error && <p className="py-12 text-center text-sm text-muted-foreground">Wachtrij ophalen…</p>}
+      {data && <>
+        <div className="surface-panel overflow-hidden">
+          <dl className="grid grid-cols-2 border-b md:grid-cols-4">
+            {[[data.total,"Zaken in selectie"],[data.checked,"Met broncontrole"],[data.queued + data.running,"In wachtrij"],[data.noSource,"Zonder passende bron"]].map(([value,label]) => (
+              <div key={label} className="px-5 py-4"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd></div>
             ))}
+          </dl>
+          <div className="flex flex-wrap gap-3 border-b p-4">
+            <Input aria-label="Zoek in onderzoekswachtrij" placeholder="Zoek een zaak…" value={query} onChange={(e)=>{setQuery(e.target.value);setPage(0);}} className="min-w-0 flex-1 sm:max-w-sm" />
+            <select aria-label="Onderzoeksstatus" value={filter} onChange={(e)=>{setFilter(e.target.value);setPage(0);}} className="h-9 rounded-lg border bg-background px-3 text-sm">
+              <option value="">Alle statussen</option>{Object.entries(labels).map(([key,label])=><option key={key} value={key}>{label}</option>)}
+            </select>
           </div>
-          <div className="px-5 pb-5 md:px-6">
-            <div
-              className="h-2 overflow-hidden rounded-full bg-muted"
-              aria-label={`${data.checked} van ${data.total} zaken met gecontroleerde bronnen`}
-            >
-              <div
-                className="h-full rounded-full bg-primary"
-                style={{
-                  width: `${data.total ? (100 * data.checked) / data.total : 0}%`,
-                }}
-              />
-            </div>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Broncontrole is geen bevestiging dat een zaak actief is. Dit is
-              een gedeeltelijke KBO-selectie; wijzigingen vereisen uw
-              goedkeuring.
-            </p>
-            {!data.online && (
-              <p className="mt-3 rounded-lg border p-3 text-sm">
-                De onderzoeksdienst heeft zich recent niet gemeld. De wachtrij blijft bewaard.
-                Eerdere resultaten blijven beschikbaar.
-              </p>
-            )}
-            {data.researchStarted >= data.researchLimit &&
-              data.researchLimit > 0 && (
-                <p className="mt-3 rounded-lg border p-3 text-sm">
-                  De eerste onderzoekstranche ({data.researchLimit} zaken) is
-                  benut. De overige onderzoeken wachten op uitbreiding binnen
-                  het gedeelde AI-budget van $10.
-                </p>
-              )}
-            <details className="mt-5 rounded-xl border">
-              <summary className="flex cursor-pointer items-center justify-between p-4 text-sm font-medium">
-                Onderzoekswachtrij en planning
-                <ChevronDown className="size-4" />
-              </summary>
-              <div className="space-y-4 border-t p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-xs text-muted-foreground">
-                    Planning elke minuut · hercontrole na 7 dagen · zonder bron
-                    na 30 dagen.
-                    <br />
-                    Laatste planning:{" "}
-                    {data.lastPlannedAt
-                      ? new Date(data.lastPlannedAt).toLocaleString("nl-BE")
-                      : "Nog niet gestart"}
-                    <br />
-                    Handelaarsgids: {data.directoryCandidates} vermeldingen;
-                    niet automatisch toegevoegd.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={busy || !data.total}
-                    onClick={toggle}
-                  >
-                    {data.paused ? (
-                      <Play className="size-4" />
-                    ) : (
-                      <Pause className="size-4" />
-                    )}
-                    {data.paused ? "Hervatten" : "Pauzeren"}
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <Input
-                    aria-label="Zoek in onderzoekswachtrij"
-                    placeholder="Zoek een zaak in de wachtrij"
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value);
-                      setPage(0);
-                    }}
-                    className="min-w-0 flex-1 rounded-lg border bg-background px-3 py-2 text-sm"
-                  />
-                  <select
-                    aria-label="Onderzoeksstatus"
-                    value={filter}
-                    onChange={(e) => {
-                      setFilter(e.target.value);
-                      setPage(0);
-                    }}
-                    className="rounded-lg border bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="">Alle statussen</option>
-                    {Object.entries(labels).map(([key, label]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <ul className="divide-y">
-                  {jobs.slice(page * 10, page * 10 + 10).map((x) => (
-                    <li key={x.id} className="py-3">
-                      <div className="flex flex-wrap justify-between gap-2 text-sm">
-                        <button
-                          className="text-left font-medium hover:underline"
-                          onClick={() => {
-                            const row = desk.records.find((r) => r.id === x.id);
-                            if (row) desk.openRecord(row, "street");
-                          }}
-                        >
-                          {x.name}
-                        </button>
-                        <span className="text-muted-foreground">
-                          {labels[x.status] ?? x.status}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                        {x.message ?? "Wacht op de volgende onderzoeksronde."}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                  <span>
-                    {jobs.length} zaken · pagina {page + 1} van{" "}
-                    {Math.max(1, Math.ceil(jobs.length / 10))}
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={!page}
-                      onClick={() => setPage(page - 1)}
-                    >
-                      Vorige
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={(page + 1) * 10 >= jobs.length}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Volgende
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </details>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted/30 text-xs text-muted-foreground"><tr><th className="px-5 py-3 font-medium">Zaak</th><th className="px-4 py-3 font-medium">Onderzoek</th><th className="hidden px-4 py-3 font-medium md:table-cell">Laatste broncontrole</th><th className="w-10"><span className="sr-only">Dossier</span></th></tr></thead>
+              <tbody className="divide-y">
+                {jobs.slice(currentPage*10,currentPage*10+10).map(x=><tr key={x.id} className="group hover:bg-muted/20">
+                  <td className="px-5 py-3"><button className="text-left font-medium hover:text-primary hover:underline" onClick={()=>{const row=desk.records.find(r=>r.id===x.id);if(row)desk.openRecord(row,"street");}}>{x.name}</button></td>
+                  <td className="px-4 py-3"><details className="max-w-xs"><summary className="flex cursor-pointer items-center gap-2 text-xs"><span className={`inline-flex rounded-md px-2 py-1 ${x.status === "checked" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{labels[x.status] ?? x.status}</span><ChevronDown className="size-3 text-muted-foreground" /></summary><p className="pt-2 text-xs leading-relaxed text-muted-foreground">{x.message ?? "Wacht op de volgende onderzoeksronde."}</p></details></td>
+                  <td className="hidden px-4 py-3 text-xs text-muted-foreground md:table-cell">{date(x.checkedAt)}</td>
+                  <td className="pr-4"><button aria-label={`Open dossier van ${x.name}`} className="rounded-md p-2 hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary" onClick={()=>{const row=desk.records.find(r=>r.id===x.id);if(row)desk.openRecord(row,"street");}}><ArrowRight aria-hidden="true" className="size-4 text-muted-foreground" /></button></td>
+                </tr>)}
+              </tbody>
+            </table>
+            {!jobs.length && <p className="p-10 text-center text-sm text-muted-foreground">Geen zaken gevonden voor deze zoekopdracht.</p>}
           </div>
-        </>
-      )}
+          <div className="flex items-center justify-between gap-3 border-t px-5 py-3 text-xs text-muted-foreground"><span>{jobs.length} {jobs.length === 1 ? "zaak" : "zaken"} · {currentPage+1} / {Math.max(1,Math.ceil(jobs.length/10))}</span><div className="flex gap-2"><Button variant="ghost" size="sm" disabled={!currentPage} onClick={()=>setPage(currentPage-1)}>Vorige</Button><Button variant="ghost" size="sm" disabled={(currentPage+1)*10>=jobs.length} onClick={()=>setPage(currentPage+1)}>Volgende</Button></div></div>
+        </div>
+        {!!(data.failed + data.blocked) && <p className="text-sm text-muted-foreground">{data.failed} onderzoeken worden opnieuw geprobeerd; {data.blocked} wachten op onderzoeksruimte. Bekijk ze via het statusfilter.</p>}
+        <details className="rounded-xl border bg-background px-5 py-4">
+          <summary className="cursor-pointer text-sm font-medium">Planning en reikwijdte</summary>
+          <div className="mt-4 grid gap-5 text-sm md:grid-cols-2">
+            <div><h3 className="font-medium">Automatische controles</h3><p className="mt-2 leading-relaxed text-muted-foreground">De wachtrij wordt elke minuut verwerkt. Bronnen worden na 7 dagen opnieuw gecontroleerd; zonder passende bron proberen we na 30 dagen opnieuw.</p><p className="mt-2 text-xs text-muted-foreground">Laatste planning: {date(data.lastPlannedAt)}</p></div>
+            <div><h3 className="font-medium">Wat deze cijfers betekenen</h3><p className="mt-2 leading-relaxed text-muted-foreground">Dit is een gedeeltelijke KBO-selectie. Een broncontrole bewijst niet dat een zaak actief is; geen bron vinden betekent niet dat ze gesloten is. Alleen u keurt wijzigingen goed.</p><p className="mt-2 text-xs text-muted-foreground">Handelaarsgids: {data.directoryCandidates} vermeldingen, niet automatisch toegevoegd. Onderzoeksruimte: {data.researchStarted} van {data.researchLimit} analyses; gedeeld AI-budget maximaal $10.</p></div>
+          </div>
+        </details>
+      </>}
     </section>
   );
 }

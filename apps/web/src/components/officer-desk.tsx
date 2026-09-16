@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { MunicipalMonitoring } from "./municipal-monitoring";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -119,16 +120,14 @@ function DeskShell({
           id="main-content"
           className="desk-main space-y-7 p-5 md:p-8 lg:p-10"
         >
-          {!desk.selected && (
+          {!desk.selected && desk.screen !== "overview" && (
             <header className="page-heading">
               <h1 className="text-2xl font-semibold tracking-tight">
                 {u.titles[desk.screen]}
               </h1>
               {!["street", "map"].includes(desk.screen) && (
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                  {desk.screen === "overview"
-                    ? t.startIntro
-                    : desk.screen === "review"
+                  {desk.screen === "review"
                       ? t.reviewIntro
                       : desk.screen === "history"
                         ? t.historyIntro
@@ -277,63 +276,20 @@ export function OverviewView() {
   const count = desk.queue.length;
   return (
     <div className="overview-layout">
-      <section className="start-focus surface-panel">
-        <div className="focus-top">
-          <span className="focus-icon">
-            <ClipboardCheck className="size-6" />
-          </span>
-          <StatusPill state={count ? "pending" : "approved"}>
-            {count ? u.pendingStatus : u.noPending}
-          </StatusPill>
-        </div>
-        <div className="focus-content">
-          <h2>
-            {count === 0
-              ? u.noPending
-              : count === 1
-                ? "1 wijziging wacht op controle"
-                : `${count} wijzigingen wachten op controle`}
-          </h2>
-          <p>
-            {count
-              ? "Bekijk wat mogelijk aangepast moet worden. U beslist op basis van de bronnen."
-              : u.noPendingNote}
-          </p>
-          {count > 0 && (
-            <Button
-              className="mt-5"
-              onClick={() => desk.openRecord(desk.queue[0], "review")}
-            >
-              {u.start}
-              <ArrowRight className="size-4" />
-            </Button>
-          )}
-        </div>
-        <div className="focus-footer">
-          <ShieldCheck className="size-4" />
-          <span>{t.reviewTipNote}</span>
+      <section className="home-search-hero">
+        <Image className="home-hero-image" src="/images/straatbeeld-street.webp" alt="" fill sizes="100vw" priority />
+        <div className="home-hero-content">
+          <h1>{t.searchTitle}</h1>
+          <p>{t.searchDescription}</p>
+          <BusinessSearch submit />
+          <Button variant="outline" className="home-browse-button" onClick={() => desk.guard(() => desk.updateParams({ q: null, street: null, page: null, zaak: null, voorstel: null }, "street"))}>
+            <Building2 className="size-4" />
+            Alle zaken bekijken
+            <span className="text-muted-foreground">{desk.records.length}</span>
+            <ArrowRight className="size-4" />
+          </Button>
         </div>
       </section>
-      <section className="start-search surface-panel">
-        <div className="flex items-center gap-3">
-          <span className="section-icon">
-            <Search className="size-5" />
-          </span>
-          <h2 className="text-lg font-semibold">{t.searchTitle}</h2>
-        </div>
-        <p className="text-sm text-muted-foreground">{t.searchDescription}</p>
-        <BusinessSearch submit />
-        <button
-          className="explore-link"
-          onClick={() => desk.navigate("street")}
-        >
-          <Building2 className="size-4" />
-          {t.explore}
-          <span>{desk.records.length}</span>
-          <ArrowRight className="size-4" />
-        </button>
-      </section>
-      <MunicipalMonitoring />
       {count > 0 && (
         <section className="start-queue surface-panel">
           <PanelTitle
@@ -373,6 +329,7 @@ export function OverviewView() {
           </div>
         </section>
       )}
+      <MunicipalMonitoring compact />
       <aside className="coverage-strip">
         <CircleHelp className="size-5 shrink-0" />
         <p>{u.coverage}</p>
