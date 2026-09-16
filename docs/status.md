@@ -1,4 +1,4 @@
-> **Integration direction, updated 16 September:** Ray continues frontend/page design on `main`. This branch is backend groundwork, not the shared application base. Do not merge the whole scaffold into main or ask Ray to switch to it. Port backend logic selectively behind the existing frontend API/auth boundary. See `docs/integration.md`.
+> **Authoritative integration direction:** Jochem’s `packages/contracts` data model and documented API are the source of truth. Ray retains his frontend/page designs on `main` and adapts its API calls and view models to this contract. Preserve authentication without changing payload shapes. Do not merge the entire scaffold. See `docs/integration.md`.
 
 # Current status
 

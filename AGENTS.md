@@ -15,6 +15,8 @@ Build Challenge 1 for Schoten/Paalstraat: browse establishment → linked parent
 
 ## Contract and source truth
 
+Jochem’s packages/contracts and docs/api-contract.md are authoritative. Ray’s main frontend/API adapter must conform to them. Preserve Ray’s UI and authorization, but never reshape the backend to fit the older packages/core or Dutch-route payloads. docs/integration.md lists required frontend adaptations.
+
 Import types/schemas from `@straatbeeld/contracts`, call the DataClient interface. Keep identifiers as strings and null for unknown facts. Preserve registry data; officer approval changes the municipal working overlay, not KBO. Evidence, legal registry status, activity assessment and officer review status are separate.
 
 A missing website does not prove closure. Absence from the partial sample does not prove absence from KBO. Parent seat is not the local establishment address. Source retrieval time is not an observation/snapshot date. Fixture data is explicitly fictional. Do not invent factual evidence or confidence percentages.
