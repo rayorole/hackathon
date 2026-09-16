@@ -125,3 +125,57 @@ export async function review(request: ReviewRequest) {
 export async function exportCsv(filters: Filters) {
   return approvedCsv(await listDetails(filters), filters);
 }
+
+export async function refresh(id: string) {
+  if (!isLive())
+    return {
+      detail: await detail(id),
+      refreshed: false,
+      messageNl:
+        "Broncontrole vereist de projectdatabase. Oefendata zijn ongewijzigd.",
+    };
+  const db = supabaseAdmin();
+  const { data, error } = await db
+    .from("straatbeeld_cases")
+    .select("detail,version")
+    .eq("id", id)
+    .maybeSingle();
+  if (error)
+    throw new DataError("DATABASE_ERROR", "Database niet beschikbaar.", 503);
+  if (!data) throw new DataError("NOT_FOUND", "Vestiging niet gevonden.", 404);
+  const { research } = await import("../../../../scripts/lib/research");
+  let result;
+  try {
+    result = await research(detailSchema.parse(data.detail));
+  } catch {
+    throw new DataError(
+      "REFRESH_FAILED",
+      "Broncontrole niet beschikbaar. Controleer bronbereikbaarheid en AI-budget; bestaand bewijs is behouden.",
+      503,
+    );
+  }
+  if (!result.refreshed) return result;
+  const saved = await db
+    .from("straatbeeld_cases")
+    .update({
+      detail: result.detail,
+      version: data.version + 1,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("version", data.version)
+    .select("id");
+  if (saved.error)
+    throw new DataError(
+      "DATABASE_ERROR",
+      "Broncontrole kon niet worden opgeslagen.",
+      503,
+    );
+  if (!saved.data?.length)
+    throw new DataError(
+      "REVISION_CONFLICT",
+      "Een beoordeling wijzigde deze vestiging tijdens broncontrole. Laad opnieuw; er is niets overschreven.",
+      409,
+    );
+  return result;
+}

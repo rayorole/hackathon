@@ -15,3 +15,5 @@ evidence/
 
 # Generated real registry fetches stay local; originals and metadata are tracked.
 data/derived/
+
+.local/

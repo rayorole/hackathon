@@ -14,7 +14,7 @@
 
 - Ray: actual Dutch officer interface, search/filtering, edit-approve flow and UX polish.
 - Jochem: real VKBO import/parent lookup, actual source retrieval + AI, refresh implementation and public authentication if hosting.
-- Source refresh deliberately reports not implemented. All initial cases are fictional. No paid provider calls are made by the starter.
+- Real KBO data and targeted AI source refresh are implemented (see latest milestones below); unsupported establishments return an explicit no-source response.
 - Dedicated Supabase `qsyxwwllwhhrwjhrfehf`: schema applied through SQL editor, three fictional cases seeded. Live list/detail, browser approval, saved rejection, stale revision 409, foreign-origin 403 and approved-only CSV verified. RLS enabled; direct anon/auth access revoked.
 - Browser approval is retained on demo case 1; demo case 2 has a setup-test rejection. Seed deliberately preserves this history.
 - Working base is `codex/team-setup`, not the alternative scaffold on `main`, per Jochem’s explicit instruction.
@@ -29,4 +29,8 @@ First real record through the stable API within 60–75 minutes of independent c
 - Imported 543 real establishments; 27 real Paalstraat establishments are available through the canonical API. Live list/export excludes demo rows.
 - 28 sample parent links plus21 fresh Paalstraat parent lookups; six lookups remain unresolved. Parent/source timestamps stay separate from sample data.
 - No AI evidence or correction proposals invented. Real records initially have insufficient activity evidence; repeat import preserves existing records and reviews.
-- Next: source retrieval/analysis and version-safe refresh, then connect Ray’s page designs to the canonical data contract. AI provider credential/spend limit requested; not configured at this checkpoint.
+- Next: source retrieval/analysis and version-safe refresh, then connect Ray’s page designs to the canonical data contract. OpenAI is now configured with the user-authorized $10 cap; see the source-analysis milestone.
+
+## Source-analysis milestone
+
+Live Amplifon extraction produced grounded source excerpts and pending proposals. Refresh is version-safe, preserves officer history, and skips repeat AI calls for unchanged complete fetches. Local budget reserves$0.10 before each call, never resets/refunds, and stops at$10. Grounding, immutable review history, cap exhaustion and concurrent-call tests are implemented. See docs/ai-and-refresh.md for limits, operation and current source coverage.

@@ -17,7 +17,7 @@ Review request: `{proposalId, expectedRevision, decision: 'approve'|'reject', co
 
 Errors: `{error:{code,message}}`. Expected 400 invalid request; 404 missing record; 409 revision conflict; 422 missing evidence; 501 write backend not connected; 503 DB error. Production server API returns 403 until auth is built. Detail and list payloads are runtime validated by the client.
 
-Current API read limit 1000 is explicit in coverage, no municipality completeness claim. Supabase list filtering uses indexed municipality/street; no pagination yet. `refresh` currently returns refreshed:false and does not change timestamps or imply network retrieval. Browser fixtures have the same methods but localStorage persistence and are not a concurrent multi-user backend.
+Current API read limit 1000 is explicit in coverage, no municipality completeness claim. Supabase list filtering uses indexed municipality/street; no pagination yet. `refresh` performs source retrieval/grounded AI extraction for the configured demo candidates; unknown targets and unchanged content return refreshed:false. See docs/ai-and-refresh.md. Browser fixtures have the same methods but localStorage persistence and are not a concurrent multi-user backend.
 
 ## Ownership/change protocol
 
