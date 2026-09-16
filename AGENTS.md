@@ -8,6 +8,9 @@ Repo context for coding agents and teammates. Derived from the PROV-AI participa
 (`agent.md`, snapshot 15 September 2026, 11:43 CEST). Where this file states an event rule it
 cites the source page; where it states a team decision it says so.
 
+## Current UX direction — task-first branch
+The user-approved task-first UX plan supersedes the dense example table in section7 below. Employee navigation is Start/Zaken/Wijzigingen/Historiek. Preserve focused proposal comparison and visible relevant/conflicting evidence; complete sources, registry data and audit remain available through disclosures. See docs/ux-task-first-plan.md and docs/ux-verification.md. Backend contracts and approval rules remain unchanged. This UX work is isolated on codex/task-first-ux; do not merge it into main without the user's direction.
+
 ---
 
 ## 1. What we are building

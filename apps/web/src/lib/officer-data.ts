@@ -78,6 +78,14 @@ export function toRecord(detail: Detail, proposalId?: string) {
     ),
   };
 }
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
 export async function api(path: string, init?: RequestInit) {
   const r = await fetch(path, {
     ...init,
@@ -86,7 +94,7 @@ export async function api(path: string, init?: RequestInit) {
   });
   if (!r.ok) {
     const body = await r.json().catch(() => null);
-    throw new Error(body?.error?.message ?? "Aanvraag mislukt.");
+    throw new ApiError(body?.error?.message ?? "Aanvraag mislukt.", r.status);
   }
   return r;
 }

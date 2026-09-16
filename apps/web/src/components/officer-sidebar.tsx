@@ -3,24 +3,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Building2,
+  Database,
   LayoutDashboard,
   Rows3,
-  Map,
   ClipboardCheck,
   History,
-  Database,
-  FlaskConical,
   ChevronsUpDown,
   LogOut,
   MapPin,
-  ArrowUpRight,
 } from "lucide-react";
 import { deskRoutes, type DeskScreen } from "@/lib/desk-routes";
 import { deskNl as t, sidebarNl as s, nl } from "@/lib/nl";
 import { signOut } from "@/app/login/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -49,28 +45,29 @@ import {
 const icons = {
   overview: LayoutDashboard,
   street: Rows3,
-  map: Map,
+  map: Rows3,
   review: ClipboardCheck,
   history: History,
-  sources: Database,
-  states: FlaskConical,
+  sources: Building2,
+  states: Building2,
 };
 const groups: { label: string; items: DeskScreen[] }[] = [
   {
     label: s.workspace,
-    items: ["overview", "street", "map", "review", "history"],
+    items: ["overview", "street", "review", "history"],
   },
-  { label: s.management, items: ["sources"] },
-  { label: s.demo, items: ["states"] },
 ];
 export function OfficerSidebar({
   officer,
   queueCount,
-  recordCount,
+  onNavigate,
+  onBeforeLeave,
 }: {
   officer: string;
   queueCount: number;
   recordCount: number;
+  onNavigate: (screen: DeskScreen) => void;
+  onBeforeLeave: (action: () => void) => void;
 }) {
   const pathname = usePathname();
   const { setOpenMobile, state, isMobile } = useSidebar();
@@ -85,7 +82,11 @@ export function OfficerSidebar({
               tooltip={t.brand}
               aria-label={t.brand}
               render={<Link href={deskRoutes.overview} />}
-              onClick={closeMobile}
+              onClick={(event) => {
+                event.preventDefault();
+                closeMobile();
+                onNavigate("overview");
+              }}
               className="gap-3 rounded-xl hover:bg-sidebar-accent"
             >
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -126,13 +127,10 @@ export function OfficerSidebar({
             <SidebarMenu className="gap-1">
               {group.items.map((key) => {
                 const Icon = icons[key],
-                  active = pathname === deskRoutes[key],
-                  count =
-                    key === "review"
-                      ? queueCount
-                      : key === "street"
-                        ? recordCount
-                        : null;
+                  active =
+                    pathname === deskRoutes[key] ||
+                    (key === "street" && pathname === deskRoutes.map),
+                  count = key === "review" ? queueCount : null;
                 return (
                   <SidebarMenuItem key={key}>
                     <SidebarMenuButton
@@ -142,14 +140,20 @@ export function OfficerSidebar({
                           aria-current={active ? "page" : undefined}
                         />
                       }
-                      onClick={closeMobile}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        closeMobile();
+                        onNavigate(key);
+                      }}
                       tooltip={t.nav[key]}
                       aria-label={t.nav[key]}
                       isActive={active}
                       className="h-9 gap-3 rounded-md px-3 pr-11 text-[13px] text-muted-foreground transition-colors hover:text-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-foreground"
                     >
                       <Icon className="size-4" />
-                      <span className="group-data-[collapsible=icon]:hidden">{t.nav[key]}</span>
+                      <span className="group-data-[collapsible=icon]:hidden">
+                        {t.nav[key]}
+                      </span>
                     </SidebarMenuButton>
                     {count !== null && (
                       <SidebarMenuBadge className="bg-transparent text-muted-foreground">
@@ -164,28 +168,13 @@ export function OfficerSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter className="gap-3 p-3 group-data-[collapsible=icon]:p-2">
-        <Card className="desk-source-card gap-2 rounded-xl border p-3 shadow-none ring-0 group-data-[collapsible=icon]:hidden">
-          <div className="flex items-center gap-2 text-xs font-medium">
-            <Database className="size-3.5 text-primary" />
-            {s.dataset}
-          </div>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            {t.sample}
-            <br />
-            {t.updated}
-          </p>
-          <Button
-            render={<Link href={deskRoutes.sources} />}
-            nativeButton={false}
-            variant="outline"
-            size="sm"
-            onClick={closeMobile}
-            className="desk-source-action mt-1 w-full justify-between text-xs"
-          >
-            {s.sourceDetails}
-            <ArrowUpRight className="size-3" />
-          </Button>
-        </Card>
+        <Button
+          variant="ghost"
+          className="justify-start text-sm"
+          onClick={() => onNavigate("sources")}
+        >
+          Over deze gegevens
+        </Button>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -225,7 +214,11 @@ export function OfficerSidebar({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   render={<Link href={deskRoutes.sources} />}
-                  onClick={closeMobile}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    closeMobile();
+                    onNavigate("sources");
+                  }}
                 >
                   <Database />
                   {t.nav.sources}
@@ -233,7 +226,9 @@ export function OfficerSidebar({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {
-                    void signOut();
+                    onBeforeLeave(() => {
+                      void signOut();
+                    });
                   }}
                 >
                   <LogOut />
