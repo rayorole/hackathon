@@ -12,6 +12,7 @@ import {
   CircleHelp,
 } from "lucide-react";
 import { normalizedField } from "@/lib/review-presentation";
+import { phoneNumbers } from "@/lib/phone-numbers";
 import { openingHours } from "@/lib/opening-hours";
 import { presentationNl as t } from "@/lib/nl";
 export function FieldIcon({
@@ -71,6 +72,17 @@ export function FieldValue({
       <div className="unknown-value">
         <CircleHelp className="size-5" aria-hidden />
         <span>{t.notKnown}</span>
+      </div>
+    );
+  if (normalizedField(field) === "telephone")
+    return (
+      <div className="flex flex-col gap-2">
+        {phoneNumbers(value).map((number) => (
+          <div className="field-value" key={number}>
+            <FieldIcon field={field} className="size-5 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 whitespace-pre-wrap break-words">{number}</span>
+          </div>
+        ))}
       </div>
     );
   if (schedule)
