@@ -1,15 +1,27 @@
 "use client";
 import { useEffect, useState } from "react";
 import { monitoringSchema, type Monitoring } from "@straatbeeld/contracts";
-import { Pause, Play, ArrowRight, ChevronDown } from "lucide-react";
+import { Pause, Play, ArrowRight, ChevronDown, Info } from "lucide-react";
 import { useDesk } from "./desk-context";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
+import { Popover, PopoverTrigger, PopoverContent, PopoverTitle, PopoverDescription } from "./ui/popover";
+function InfoHint({ label, children }: { label: string; children: string }) {
+  return <Popover>
+    <PopoverTrigger aria-label={`Uitleg: ${label}`} className="inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground/70 hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary">
+      <Info aria-hidden="true" className="size-3.5" />
+    </PopoverTrigger>
+    <PopoverContent className="max-w-[calc(100vw-2rem)] gap-1.5 rounded-xl p-4" sideOffset={8}>
+      <PopoverTitle className="text-sm font-medium">{label}</PopoverTitle>
+      <PopoverDescription className="text-xs leading-relaxed">{children}</PopoverDescription>
+    </PopoverContent>
+  </Popover>;
+}
 const labels: Record<string, string> = {
   queued: "In wachtrij",
   running: "Wordt onderzocht",
-  checked: "Bronnen gecontroleerd",
-  no_source: "Geen passende bron",
+  checked: "Bronnen bekeken",
+  no_source: "Bron niet gevonden",
   failed: "Opnieuw proberen",
   budget_blocked: "Wacht op onderzoeksruimte",
 };
@@ -97,8 +109,13 @@ export function MunicipalMonitoring({ compact = false }: { compact?: boolean }) 
       {data && <>
         <div className="surface-panel overflow-hidden">
           <dl className="grid grid-cols-2 border-b md:grid-cols-4">
-            {[[data.total,"Zaken in selectie"],[data.checked,"Met broncontrole"],[data.queued + data.running,"In wachtrij"],[data.noSource,"Zonder passende bron"]].map(([value,label]) => (
-              <div key={label} className="px-5 py-4"><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd></div>
+            {[
+              {value: data.total, label: "Zaken in onderzoek", help: "Alle zaken uit de ingeladen KBO-selectie die we opvolgen. Dit zijn niet alle zaken in Schoten."},
+              {value: data.checked, label: "Bronnen bekeken", help: "Voor deze zaken is minstens één openbare bron opgehaald en bekeken. Dat bewijst niet dat een zaak actief is of dat alle gegevens kloppen. Wijzigingen wachten op uw goedkeuring."},
+              {value: data.queued + data.running, label: "Nog te onderzoeken", help: "Deze zaken wachten op hun eerste of volgende controle, of worden nu onderzocht. De wachtrij wordt automatisch verwerkt."},
+              {value: data.noSource, label: "Bron niet gevonden", help: "In de aangesloten bronnen vonden we geen duidelijke match met deze zaak. Dit betekent niet dat de zaak gesloten is. We proberen later opnieuw."},
+            ].map(({value,label,help}) => (
+              <div key={label} className="px-5 py-4"><dt className="flex items-center gap-1 text-xs text-muted-foreground">{label}<InfoHint label={label}>{help}</InfoHint></dt><dd className="mt-1 text-xl font-semibold tabular-nums">{value}</dd></div>
             ))}
           </dl>
           <div className="flex flex-wrap gap-3 border-b p-4">
@@ -109,7 +126,7 @@ export function MunicipalMonitoring({ compact = false }: { compact?: boolean }) 
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-muted/30 text-xs text-muted-foreground"><tr><th className="px-5 py-3 font-medium">Zaak</th><th className="px-4 py-3 font-medium">Onderzoek</th><th className="hidden px-4 py-3 font-medium md:table-cell">Laatste broncontrole</th><th className="w-10"><span className="sr-only">Dossier</span></th></tr></thead>
+              <thead className="bg-muted/30 text-xs text-muted-foreground"><tr><th className="px-5 py-3 font-medium">Zaak</th><th className="px-4 py-3 font-medium"><span className="inline-flex items-center gap-1">Onderzoeksstatus<InfoHint label="Onderzoeksstatus">Waar de automatische controle staat. Klik op een status in de tabel voor de uitleg bij die zaak.</InfoHint></span></th><th className="hidden px-4 py-3 font-medium md:table-cell"><span className="inline-flex items-center gap-1">Laatste broncheck<InfoHint label="Laatste broncheck">Wanneer we voor het laatst een openbare bron bij deze zaak konden bekijken. Dit is niet de datum waarop een medewerker de gegevens heeft goedgekeurd.</InfoHint></span></th><th className="w-10"><span className="sr-only">Dossier</span></th></tr></thead>
               <tbody className="divide-y">
                 {jobs.slice(currentPage*10,currentPage*10+10).map(x=><tr key={x.id} className="group hover:bg-muted/20">
                   <td className="px-5 py-3"><button className="text-left font-medium hover:text-primary hover:underline" onClick={()=>{const row=desk.records.find(r=>r.id===x.id);if(row)desk.openRecord(row,"street");}}>{x.name}</button></td>
