@@ -21,6 +21,7 @@ import { signOut } from "@/app/login/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -76,20 +77,21 @@ export function OfficerSidebar({
   const closeMobile = () => setOpenMobile(false);
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader className="gap-4 p-3">
+      <SidebarHeader className="gap-4 p-3 group-data-[collapsible=icon]:px-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
               tooltip={t.brand}
+              aria-label={t.brand}
               render={<Link href={deskRoutes.overview} />}
               onClick={closeMobile}
               className="gap-3 rounded-xl hover:bg-sidebar-accent"
             >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm group-data-[collapsible=icon]:size-8">
-                <Building2 className="size-5" />
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Building2 className="size-4" />
               </span>
-              <span className="grid flex-1 text-left leading-tight">
+              <span className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="font-heading text-sm font-semibold">
                   {t.brand}
                 </span>
@@ -142,20 +144,15 @@ export function OfficerSidebar({
                       }
                       onClick={closeMobile}
                       tooltip={t.nav[key]}
+                      aria-label={t.nav[key]}
                       isActive={active}
-                      className="h-10 gap-3 rounded-lg px-3 text-[13px] text-muted-foreground transition-colors hover:text-foreground data-active:bg-primary/10 data-active:font-semibold data-active:text-primary"
+                      className="h-9 gap-3 rounded-md px-3 pr-11 text-[13px] text-muted-foreground transition-colors hover:text-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-foreground"
                     >
                       <Icon className="size-4" />
-                      <span>{t.nav[key]}</span>
+                      <span className="group-data-[collapsible=icon]:hidden">{t.nav[key]}</span>
                     </SidebarMenuButton>
                     {count !== null && (
-                      <SidebarMenuBadge
-                        className={
-                          active
-                            ? "bg-primary/10 text-primary"
-                            : "bg-muted text-muted-foreground"
-                        }
-                      >
+                      <SidebarMenuBadge className="bg-transparent text-muted-foreground">
                         {count}
                       </SidebarMenuBadge>
                     )}
@@ -167,7 +164,7 @@ export function OfficerSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter className="gap-3 p-3 group-data-[collapsible=icon]:p-2">
-        <Card className="gap-2 rounded-xl border bg-background/60 p-3 shadow-none ring-0 group-data-[collapsible=icon]:hidden">
+        <Card className="desk-source-card gap-2 rounded-xl border p-3 shadow-none ring-0 group-data-[collapsible=icon]:hidden">
           <div className="flex items-center gap-2 text-xs font-medium">
             <Database className="size-3.5 text-primary" />
             {s.dataset}
@@ -177,19 +174,23 @@ export function OfficerSidebar({
             <br />
             {t.updated}
           </p>
-          <Link
-            href={deskRoutes.sources}
+          <Button
+            render={<Link href={deskRoutes.sources} />}
+            nativeButton={false}
+            variant="outline"
+            size="sm"
             onClick={closeMobile}
-            className="flex items-center justify-between text-xs font-medium text-primary hover:underline"
+            className="desk-source-action mt-1 w-full justify-between text-xs"
           >
             {s.sourceDetails}
             <ArrowUpRight className="size-3" />
-          </Link>
+          </Button>
         </Card>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger
+                aria-label={s.account}
                 render={<SidebarMenuButton size="lg" tooltip={s.account} />}
                 className="gap-3 rounded-xl border bg-background/70"
               >

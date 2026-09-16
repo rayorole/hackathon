@@ -3,7 +3,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { z } from "zod";
-import { eq, sql } from "drizzle-orm";
+import { eq, gt, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "./db/client.js";
 import { audit, evidence, records, scores } from "./db/schema.js";
@@ -21,6 +21,22 @@ app.use("/*", cors({ origin: process.env.WEB_ORIGIN ?? "http://localhost:3000", 
 app.use("/api/*", requireOfficer);
 
 app.get("/health", (c) => c.json({ ok: true }));
+
+/** Read-only, cursor-paginated map feed. Include unlocated rows so none disappear silently. */
+app.get("/api/kaart", async (c) => {
+  const parsed = z.object({ cursor: z.string().min(1).max(40).optional() }).safeParse(c.req.query());
+  if (!parsed.success) return c.json({ error: "ongeldige cursor" }, 400);
+  const pageSize = 500;
+  const rows = await db.select().from(records)
+    .leftJoin(scores, eq(scores.ondernemingsnr, records.ondernemingsnr))
+    .where(parsed.data.cursor ? gt(records.ondernemingsnr, parsed.data.cursor) : undefined)
+    .orderBy(records.ondernemingsnr).limit(pageSize + 1);
+  const page = rows.slice(0, pageSize);
+  return c.json({
+    entries: page.map(row => ({ record: row.records, score: row.scores })),
+    nextCursor: rows.length > pageSize ? page.at(-1)?.records.ondernemingsnr ?? null : null,
+  });
+});
 
 /** Records for one street, worst confidence first â€” the officer's queue. */
 app.get("/api/straat/:straat", async (c) => {

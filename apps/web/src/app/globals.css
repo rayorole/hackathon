@@ -6,6 +6,7 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-warning: var(--warning);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
@@ -49,49 +50,53 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.148 0.004 228.8);
+  --warning: oklch(0.47 0.095 70);
+  --ease-desk: cubic-bezier(0.23, 1, 0.32, 1);
+  --desk-shadow: 0 1px 3px oklch(0.25 0.006 260 / 3%);
+  --background: oklch(0.986 0.002 90);
+  --foreground: oklch(0.25 0.006 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.148 0.004 228.8);
+  --card-foreground: oklch(0.25 0.006 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.148 0.004 228.8);
-  --primary: oklch(0.5 0.134 242.749);
-  --primary-foreground: oklch(0.977 0.013 236.62);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.963 0.002 197.1);
-  --muted-foreground: oklch(0.56 0.021 213.5);
-  --accent: oklch(0.963 0.002 197.1);
-  --accent-foreground: oklch(0.218 0.008 223.9);
+  --popover-foreground: oklch(0.25 0.006 260);
+  --primary: oklch(0.28 0.012 260);
+  --primary-foreground: oklch(0.985 0.005 90);
+  --secondary: oklch(0.96 0.003 260);
+  --secondary-foreground: oklch(0.32 0.008 260);
+  --muted: oklch(0.965 0.002 260);
+  --muted-foreground: oklch(0.51 0.008 260);
+  --accent: oklch(0.95 0.004 260);
+  --accent-foreground: oklch(0.28 0.008 260);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.925 0.005 214.3);
-  --input: oklch(0.925 0.005 214.3);
-  --ring: oklch(0.723 0.014 214.4);
-  --chart-1: oklch(0.872 0.007 219.6);
-  --chart-2: oklch(0.56 0.021 213.5);
+  --border: oklch(0.916 0.003 260);
+  --input: oklch(0.89 0.004 260);
+  --ring: oklch(0.55 0.015 260);
+  --chart-1: oklch(0.5 0.08 178);
+  --chart-2: oklch(0.7 0.1 80);
   --chart-3: oklch(0.45 0.017 213.2);
   --chart-4: oklch(0.378 0.015 216);
   --chart-5: oklch(0.275 0.011 216.9);
   --radius: 0.625rem;
-  --sidebar: oklch(0.987 0.002 197.1);
-  --sidebar-foreground: oklch(0.148 0.004 228.8);
-  --sidebar-primary: oklch(0.588 0.158 241.966);
+  --sidebar: oklch(0.977 0.002 90);
+  --sidebar-foreground: oklch(0.3 0.006 260);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.977 0.013 236.62);
-  --sidebar-accent: oklch(0.963 0.002 197.1);
-  --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
-  --sidebar-border: oklch(0.925 0.005 214.3);
-  --sidebar-ring: oklch(0.723 0.014 214.4);
+  --sidebar-accent: oklch(0.935 0.004 260);
+  --sidebar-accent-foreground: var(--primary);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
 .dark {
+  --warning: oklch(0.8 0.11 80);
   --background: oklch(0.148 0.004 228.8);
   --foreground: oklch(0.987 0.002 197.1);
   --card: oklch(0.218 0.008 223.9);
   --card-foreground: oklch(0.987 0.002 197.1);
   --popover: oklch(0.218 0.008 223.9);
   --popover-foreground: oklch(0.987 0.002 197.1);
-  --primary: oklch(0.443 0.11 240.79);
-  --primary-foreground: oklch(0.977 0.013 236.62);
+  --primary: oklch(0.76 0.09 172);
+  --primary-foreground: oklch(0.2 0.03 175);
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.275 0.011 216.9);
@@ -102,8 +107,8 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.56 0.021 213.5);
-  --chart-1: oklch(0.872 0.007 219.6);
-  --chart-2: oklch(0.56 0.021 213.5);
+  --chart-1: oklch(0.5 0.08 178);
+  --chart-2: oklch(0.7 0.1 80);
   --chart-3: oklch(0.45 0.017 213.2);
   --chart-4: oklch(0.378 0.015 216);
   --chart-5: oklch(0.275 0.011 216.9);
@@ -128,9 +133,152 @@
     @apply font-sans;
   }
 }
-/* Compact controls from the supplied officer design; colors use the shadcn preset. */
-.officer-desk [data-slot="button"],
-.officer-desk [data-slot="input"],
-.officer-desk [data-slot="textarea"] {
-  border-radius: 0.375rem;
+
+/* Vestigingsbeeld component language. Slot selectors also reach portalled UI.
+   Layout utilities remain local; these rules own shared visual treatment. */
+@layer components {
+  :where(button, [role="button"], [role="tab"], [role="menuitem"], summary) {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  :where(button:disabled, [aria-disabled="true"], [data-disabled]) { cursor: not-allowed; }
+  :where([data-slot]) { --tw-duration: 160ms; }
+  :where([data-slot="button"], [data-slot="toggle"], [data-slot="tabs-trigger"], [data-slot="sidebar-menu-button"]) {
+    transition-property: color, background-color, border-color, box-shadow, transform;
+    transition-duration: 160ms;
+    transition-timing-function: var(--ease-desk);
+  }
+  :where([data-slot="card"], [data-slot="item"], [data-slot="empty"], [data-slot="attachment"], [data-slot="questionnaire"]) {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--desk-shadow);
+  }
+  :where([data-slot="card-title"], [data-slot="dialog-title"], [data-slot="sheet-title"], [data-slot="drawer-title"], [data-slot="alert-dialog-title"], [data-slot="empty-title"]) {
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+  :where([data-slot="input"], [data-slot="textarea"], [data-slot="input-group"], [data-slot="select-trigger"], [data-slot="native-select"], [data-slot="combobox-input"] ) {
+    border-radius: var(--radius-md);
+    background: var(--card);
+    box-shadow: inset 0 1px 2px color-mix(in oklch, var(--foreground) 3%, transparent);
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+  }
+  :where([data-slot="field-label"], [data-slot="label"]) { font-weight: 550; }
+  :where([data-slot="field-description"], [data-slot="card-description"], [data-slot="empty-description"]) { line-height: 1.65; }
+  :where([data-slot="badge"], [data-slot="combobox-chip"]) {
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 550;
+    letter-spacing: 0.005em;
+  }
+  :where([data-slot="alert"]) { border-radius: var(--radius-lg); border-inline-start: 1px solid var(--border); }
+  :where([data-slot="avatar"], [data-slot="avatar-fallback"]) { border-radius: 30%; }
+  :where([data-slot="avatar-fallback"]) { background: var(--secondary); color: var(--primary); font-weight: 600; }
+  :where([data-slot="table"]) { font-variant-numeric: tabular-nums; }
+  :where([data-slot="table-head"]) { height: 44px; font-weight: 550; color: var(--muted-foreground); }
+  :where([data-slot="table-cell"]) { padding-block: 16px; }
+  :where([data-slot="table-header"]) { background: color-mix(in oklch, var(--muted) 65%, var(--card)); }
+  :where([data-slot="table-row"][data-state="selected"]) { background: var(--accent); box-shadow: none; }
+  :where([data-slot="tabs-list"], [data-slot="toggle-group"], [data-slot="menubar"]) { border-radius: var(--radius-lg); padding: 4px; background: var(--muted); }
+  :where([data-slot="tabs-trigger"], [data-slot="toggle"], [data-slot="menubar-trigger"]) { border-radius: var(--radius-md); }
+  :where([data-slot="tabs-trigger"][data-active]) { box-shadow: 0 1px 4px color-mix(in oklch, var(--foreground) 9%, transparent); }
+  :where([data-slot="checkbox"]) { border-radius: 5px; }
+  :where([data-slot="radio-group-item"], [data-slot="checkbox"], [data-slot="switch"], [data-slot="slider-thumb"]) { cursor: pointer; box-shadow: 0 1px 2px color-mix(in oklch, var(--foreground) 8%, transparent); }
+  :where([data-slot="progress"], [data-slot="slider-track"]) { background: var(--secondary); }
+  :where([data-slot="progress-indicator"], [data-slot="slider-range"]) { background: var(--primary); }
+  :where([data-slot="separator"], [data-slot="resizable-handle"]) { background: var(--border); }
+  :where([data-slot="scroll-area-thumb"]) { background: color-mix(in oklch, var(--primary) 25%, var(--border)); }
+  :where([data-slot="skeleton"]) { border-radius: var(--radius-md); background: var(--muted); }
+  :where([data-slot="kbd"], [data-slot="input-otp-slot"]) { border-radius: 5px; border: 1px solid var(--border); box-shadow: 0 2px 0 var(--border); font-variant-numeric: tabular-nums; }
+  :where([data-slot="accordion-item"]) { border-color: var(--border); }
+  :where([data-slot="accordion-trigger"]) { font-weight: 550; letter-spacing: -0.01em; }
+  :where([data-slot="breadcrumb"], [data-slot="pagination"], [data-slot="navigation-menu"]) { font-size: 12px; }
+  :where([data-slot="calendar"]) { border-radius: var(--radius-xl); background: var(--card); }
+  :where([data-slot="chart"]) { font-variant-numeric: tabular-nums; }
+  :where([data-slot="bubble-content"], [data-slot="message-content"]) { border-radius: var(--radius-xl); line-height: 1.65; }
+  :where([data-slot="marker"]) { color: var(--primary); }
+}
+
+/* Override the preset's pill silhouettes consistently, including portal content. */
+[data-slot="button"]:disabled { cursor: not-allowed; }
+[data-slot="card"], [data-slot="empty"], [data-slot="attachment"] { border-radius: var(--radius-xl); }
+[data-slot="card-header"], [data-slot="card-footer"] { border-radius: 0; }
+[data-slot="badge"] { border-radius: 6px; }
+[data-slot="input"], [data-slot="textarea"], [data-slot="select-trigger"], [data-slot="native-select"], [data-slot="input-group"] { border-radius: var(--radius-md); }
+[data-slot="tabs-list"], [data-slot="toggle-group"], [data-slot="menubar"] { border-radius: var(--radius-lg); }
+[data-slot="tabs-trigger"], [data-slot="toggle"] { border-radius: var(--radius-md); transition-property: color, background-color, box-shadow; }
+
+:is([data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"], [data-slot="context-menu-content"], [data-slot="context-menu-sub-content"], [data-slot="menubar-content"], [data-slot="menubar-sub-content"], [data-slot="popover-content"], [data-slot="hover-card-content"], [data-slot="select-content"], [data-slot="combobox-content"], [data-slot="navigation-menu-content"], [data-slot="command"], [data-slot="toast-content"]) {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 8px color-mix(in oklch, var(--foreground) 5%, transparent), 0 16px 48px color-mix(in oklch, var(--foreground) 10%, transparent);
+  animation-duration: 160ms;
+  animation-timing-function: var(--ease-desk);
+  transform-origin: var(--transform-origin);
+}
+:is([data-slot="dropdown-menu-item"], [data-slot="context-menu-item"], [data-slot="menubar-item"], [data-slot="select-item"], [data-slot="combobox-item"], [data-slot="command-item"]) { border-radius: 6px; cursor: pointer; }
+:is([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) { border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 24px 80px color-mix(in oklch, var(--foreground) 20%, transparent); animation-duration: 180ms; animation-timing-function: var(--ease-desk); }
+:is([data-slot="sheet-content"], [data-slot="drawer-content"]) { box-shadow: 0 12px 60px color-mix(in oklch, var(--foreground) 14%, transparent); border-color: var(--border); animation-duration: 220ms; }
+[data-slot="tooltip-content"] { border-radius: 7px; background: var(--foreground); color: var(--background); padding: 7px 10px; font-size: 11px; animation-duration: 125ms; }
+[data-slot="tooltip-content"][data-instant] { animation: none; transition: none; }
+[data-slot="sidebar-menu-button"][data-active] { background: var(--sidebar-accent); color: var(--primary); box-shadow: none; }
+[data-slot="sidebar-menu-badge"] { border-radius: 5px; font-variant-numeric: tabular-nums; }
+.officer-desk [data-slot="sidebar-header"] { padding-block: 20px; }
+.officer-desk [data-collapsible="icon"] [data-slot="sidebar-header"] { padding-block: 12px; }
+.officer-desk [data-collapsible="icon"] [data-slot="sidebar-menu-button"] {
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  margin-inline: auto;
+  justify-content: center;
+  gap: 0;
+  border-radius: var(--radius-lg);
+}
+.officer-desk [data-collapsible="icon"] [data-slot="sidebar-group-label"] { display: none; }
+.officer-desk [data-collapsible="icon"] [data-slot="sidebar-content"] { overflow-y: auto; overflow-x: hidden; }
+.officer-desk [data-collapsible="icon"] [data-slot="sidebar-separator"] { flex-shrink: 0; width: auto; margin-inline: 12px; }
+.desk-command-dialog [data-slot="command"] { border: 0; border-radius: 0; box-shadow: none; padding: 6px; }
+.desk-command [data-slot="command-input-wrapper"] { padding: 4px 4px 8px; }
+.desk-command [data-slot="input-group"] { height: 42px; background: var(--card); }
+.desk-command [data-slot="command-item"][data-selected="true"] { background: var(--accent); color: var(--accent-foreground); }
+.desk-command [data-slot="command-item"] { min-height: 38px; }
+.desk-main { width: 100%; max-width: 1560px; margin-inline: auto; }
+.desk-main > [data-slot="alert"] { border-inline-start: 1px solid var(--border); }
+.desk-main [data-slot="card-header"] { padding: 19px 20px; background: color-mix(in oklch, var(--card) 75%, var(--background)); }
+.desk-main [data-slot="card-title"] { font-size: 14px; font-weight: 600; }
+.desk-focus { background-color: var(--card); background-image: linear-gradient(90deg, var(--card) 5%, transparent 85%), url("/backgrounds/dashboard-paper.png"); background-position: center, right center; background-size: cover; border: 1px solid var(--border); box-shadow: var(--desk-shadow); }
+.dark .desk-focus { background-image: linear-gradient(90deg, var(--card), color-mix(in oklch, var(--card) 88%, transparent)), url("/backgrounds/dashboard-paper.png"); }
+.desk-stat { position: relative; box-shadow: var(--desk-shadow); }
+.desk-footer { margin-top: 32px; }
+
+/* Decorative generated paper/map texture; not geographic evidence. */
+.desk-source-card {
+  background-color: var(--secondary);
+  background-image: linear-gradient(90deg, color-mix(in oklch, var(--card) 35%, transparent), transparent), url("/backgrounds/sidebar-map.png");
+  background-position: right center;
+  background-size: cover;
+}
+.desk-source-card p { color: color-mix(in oklch, var(--foreground) 85%, var(--card)); }
+.desk-source-action[data-slot="button"] {
+  background: var(--card);
+  color: var(--card-foreground);
+  border-color: color-mix(in oklch, var(--foreground) 16%, var(--card));
+  box-shadow: 0 1px 2px color-mix(in oklch, var(--foreground) 8%, transparent);
+}
+.desk-source-action[data-slot="button"]:hover {
+  background: var(--accent);
+  border-color: color-mix(in oklch, var(--foreground) 28%, var(--card));
+}
+.dark .desk-source-card {
+  background-image: linear-gradient(var(--card), color-mix(in oklch, var(--card) 88%, transparent)), url("/backgrounds/sidebar-map.png");
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-slot="table-body"] [data-slot="table-row"]:hover { background: color-mix(in oklch, var(--accent) 50%, var(--card)); }
+}
+/* Keyboard interaction stays immediate; movement is never required to read state. */
+[data-slot]:focus-visible { transition-duration: 0ms; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  [data-slot="button"]:active { transform: none !important; }
 }

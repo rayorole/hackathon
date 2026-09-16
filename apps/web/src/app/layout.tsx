@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KBO Evidence Desk",
+  title: "Vestigingsbeeld · KBO Evidence Desk",
   description:
     "Welke ondernemingen zijn actief in deze straat, en waarop baseren we dat?",
 };

@@ -1,10 +1,13 @@
-﻿"use client";
+"use client";
 
 import { createContext, useContext, useState, type ReactNode } from "react";
-import { Search, ArrowRight, MapPin, Download } from "lucide-react";
+import { Search, ArrowRight, MapPin, Download, ShieldCheck, ClipboardCheck, Building2, ScanSearch, Store, History, ArrowUpRight } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { deskRoutes } from "@/lib/desk-routes";
 import { OfficerSidebar } from "@/components/officer-sidebar";
+import { DeskCommandBar } from "@/components/desk-command-bar";
+import { DeskDataTable, type DeskColumn } from "@/components/desk-data-table";
+import { DashboardCharts } from "@/components/dashboard-charts";
 import { demoRecords, type DemoRecord } from "@/lib/officer-demo";
 import { deskNl as t, nl, deskSources } from "@/lib/nl";
 import { cn } from "@/lib/utils";
@@ -22,8 +25,6 @@ import {
 } from "@/components/ui/card";
 import {
   Table,
-  TableHeader,
-  TableHead,
   TableBody,
   TableRow,
   TableCell,
@@ -64,7 +65,7 @@ type Entry = {
 const panel = "rounded-xl border shadow-xs ring-0 gap-0 py-0 overflow-hidden";
 const tones = {
   Hoog: "border-primary/20 bg-primary/5 text-primary",
-  Middel: "border-amber-200 bg-amber-50 text-amber-800",
+  Middel: "border-warning/25 bg-warning/10 text-warning",
   Laag: "border-border bg-muted text-muted-foreground",
 };
 function Confidence({ value }: { value: DemoRecord["zekerheid"] }) {
@@ -361,23 +362,18 @@ export function OfficerDesk({
           queueCount={queue.length}
           recordCount={demoRecords.length}
         />
-        <SidebarInset className="min-w-0 bg-muted/25">
+        <SidebarInset className="min-w-0 bg-background">
           <header className="sticky top-0 z-10 flex min-h-15 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur-sm md:px-6">
             <SidebarTrigger className="shrink-0" />
-            <div className="relative w-full max-w-[420px]">
-              <Search className="pointer-events-none absolute left-3 top-2.5 size-4 text-muted-foreground" />
-              <Input
-                aria-label={t.searchLabel}
-                placeholder={t.search}
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setSelected(null);
-                  setScreen("street");
-                }}
-                className="h-9 rounded-md bg-background pl-9 text-xs!"
-              />
-            </div>
+            <DeskCommandBar
+              onNavigate={setScreen}
+              onOpenRecord={value.openRecord}
+              onSearch={(nextQuery) => {
+                setQuery(nextQuery);
+                setSelected(null);
+                setScreen("street");
+              }}
+            />
             <span className="ml-auto hidden whitespace-nowrap text-xs text-muted-foreground lg:block">
               {rows.length} / {demoRecords.length} {t.records}
             </span>
@@ -392,7 +388,7 @@ export function OfficerDesk({
               </Badge>
             </Button>
           </header>
-          <main className="space-y-5 p-4 md:p-6">
+          <main className="desk-main space-y-6 p-4 md:p-8 xl:p-10">
             <Alert className="rounded-lg border-primary/15 bg-primary/5 py-2.5">
               <AlertDescription className="flex flex-wrap items-center gap-x-2 text-xs">
                 <Badge
@@ -406,7 +402,8 @@ export function OfficerDesk({
             </Alert>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h1 className="font-heading text-[21px] font-semibold tracking-tight">
+                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">{t.workspaceLabel}</p>
+                <h1 className="font-heading text-2xl font-semibold tracking-tight md:text-[30px]">
                   {screen === "street"
                     ? (query || t.titles.street) + " · " + t.town
                     : t.titles[screen]}
@@ -428,6 +425,10 @@ export function OfficerDesk({
               )}
             </div>
             {children}
+            <footer className="desk-footer flex flex-wrap items-center justify-between gap-3 border-t pt-5 text-[11px] leading-relaxed text-muted-foreground">
+              <p className="max-w-xl">{nl.attribution}</p>
+              <span className="flex items-center gap-1.5"><ShieldCheck className="size-3.5" />{t.approvalNote}</span>
+            </footer>
           </main>
         </SidebarInset>
         <Dialog
@@ -484,27 +485,76 @@ export function OfficerDesk({
 }
 
 export function OverviewView() {
-  const { queue, streets, setQuery, setSelected, setScreen, history } =
+  const { queue, streets, setQuery, setSelected, setScreen, history, openRecord } =
     useDesk();
+  const statIcons = [Building2, ScanSearch, Store, ClipboardCheck];
   return (
     <>
+      <Card className="desk-focus gap-0 p-0">
+        <div className="grid gap-8 p-6 md:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="max-w-xl">
+            <p className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-primary"><ShieldCheck className="size-4" />{t.focusLabel}</p>
+            <h2 className="max-w-md font-heading text-2xl font-semibold leading-tight tracking-tight md:text-[32px]">{t.focusTitle}</h2>
+            <p className="mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">{t.focusNote}</p>
+            <div className="mt-6 flex flex-wrap gap-2">
+              <Button onClick={() => setScreen("review")}>{t.startReview}<ArrowRight className="size-4" /></Button>
+              <Button variant="outline" onClick={() => { setQuery(""); setSelected(null); setScreen("street"); }}>{t.exploreStreets}</Button>
+            </div>
+          </div>
+          <div className="flex items-center gap-6 lg:pr-4">
+            <div className="desk-focus-count rounded-xl border border-border/60 bg-card/85 p-5 backdrop-blur-sm">
+              <p className="font-heading text-6xl font-semibold tracking-tighter text-primary tabular-nums">{queue.length.toString().padStart(2, "0")}</p>
+              <p className="mt-2 max-w-32 text-xs leading-relaxed text-muted-foreground">{t.waitingReview}</p>
+              <p className="mt-4 text-[11px] text-muted-foreground">{t.sessionProgress}: <strong className="text-foreground tabular-nums">{history.length}</strong></p>
+            </div>
+          </div>
+        </div>
+      </Card>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
           demoRecords.length,
           demoRecords.filter((r) => r.zekerheid === "Laag").length,
           demoRecords.filter((r) => r.register === "Ontbreekt").length,
           queue.length,
-        ].map((count, i) => (
-          <Card key={i} className={cn(panel, "gap-1 p-4")}>
-            <p className="text-xs text-muted-foreground">{t.stats[i]}</p>
-            <p className="my-1 font-heading text-3xl font-semibold tabular-nums">
+        ].map((count, i) => {
+          const Icon = statIcons[i];
+          return (
+          <Card key={i} className={cn(panel, "desk-stat gap-1 p-5")}>
+            <div className="flex items-center justify-between gap-2"><p className="text-xs font-medium text-muted-foreground">{t.stats[i]}</p><Icon className="size-4 text-primary/65" /></div>
+            <p className="my-2 font-heading text-3xl font-semibold tracking-tight tabular-nums">
               {count}
             </p>
             <p className="text-xs text-muted-foreground">{t.statNotes[i]}</p>
           </Card>
-        ))}
+        );})}
       </div>
-      <div className="grid items-start gap-4 xl:grid-cols-2">
+      <DashboardCharts
+        records={demoRecords}
+        queue={queue}
+        onOpenRecord={openRecord}
+        onOpenStreet={(street) => {
+          setQuery(street);
+          setSelected(null);
+          setScreen("street");
+        }}
+      />
+      {queue.length > 0 && (
+        <Panel title={t.reviewFirst} description={t.reviewFirstNote}>
+          <div className="divide-y">
+            {queue.slice(0, 3).map((record) => (
+              <div key={record.adres} className="flex flex-wrap items-center gap-4 px-5 py-4">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border bg-muted/50 text-primary"><Store className="size-4" /></span>
+                <div className="min-w-0 flex-1 basis-40"><p className="text-sm font-medium">{record.naam}</p><p className="mt-1 text-xs text-muted-foreground">{record.adres} · {record.soort}</p></div>
+                <p className="hidden max-w-56 flex-1 text-xs leading-relaxed text-muted-foreground lg:block">{record.voorstel}</p>
+                <Confidence value={record.zekerheid} />
+                <Button variant="outline" size="sm" onClick={() => openRecord(record)}>{t.openDossier}<ArrowUpRight className="size-3.5" /></Button>
+              </div>
+            ))}
+          </div>
+          <div className="border-t bg-muted/30 px-5 py-2"><Button variant="link" size="sm" className="px-0" onClick={() => setScreen("review")}>{t.viewAll}<ArrowRight className="size-3.5" /></Button></div>
+        </Panel>
+      )}
+      <div className="grid items-start gap-5 xl:grid-cols-[1.15fr_1fr]">
         <Panel title={t.streetTitle} description={t.streetNote}>
           <Table>
             <TableBody>
@@ -557,8 +607,10 @@ export function OverviewView() {
               ))}
             </div>
           ) : (
-            <div className="p-6 text-sm text-muted-foreground">
-              {t.noHistoryNote}
+            <div className="flex min-h-48 flex-col items-center justify-center p-6 text-center">
+              <span className="mb-4 flex size-11 items-center justify-center rounded-xl border bg-muted/60 text-primary"><History className="size-5" /></span>
+              <p className="text-sm font-medium">{t.historyEmptyTitle}</p>
+              <p className="mt-2 max-w-xs text-xs leading-relaxed text-muted-foreground">{t.historyEmptyNote}</p>
             </div>
           )}
         </Panel>
@@ -568,204 +620,52 @@ export function OverviewView() {
 }
 
 export function StreetView() {
-  const { selected, rows, setSelected, decisions, setQuery, details } =
-    useDesk();
-  return (
-    <div
-      className={cn(
-        "grid items-start gap-4",
-        selected && "xl:grid-cols-[minmax(0,1.6fr)_minmax(310px,.95fr)]",
-      )}
-    >
-      <div className="min-w-0">
-        {rows.length ? (
-          <Panel>
-            <Table className="text-xs">
-              <TableHeader className="bg-muted/60">
-                <TableRow>
-                  {t.columns.map((c) => (
-                    <TableHead
-                      key={c}
-                      className="px-3 text-xs text-muted-foreground"
-                    >
-                      {c}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((r) => (
-                  <TableRow
-                    key={r.adres}
-                    data-state={
-                      selected?.adres === r.adres ? "selected" : undefined
-                    }
-                  >
-                    <TableCell className="whitespace-nowrap px-3">
-                      {r.adres}
-                    </TableCell>
-                    <TableCell className="min-w-40 px-3">
-                      <Button
-                        variant="link"
-                        className="h-auto justify-start whitespace-normal p-0 text-left text-xs text-foreground"
-                        onClick={() => setSelected(r)}
-                      >
-                        {r.naam}
-                      </Button>
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        {r.soort}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          r.register === "Ontbreekt" ? "destructive" : "outline"
-                        }
-                        className="rounded-md text-[11px]"
-                      >
-                        {r.register}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-44 whitespace-normal text-muted-foreground">
-                      {r.bewijs[0]?.bron}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap text-muted-foreground">
-                      {r.laatste}
-                    </TableCell>
-                    <TableCell>
-                      <Confidence value={r.zekerheid} />
-                    </TableCell>
-                    <TableCell className="min-w-36 whitespace-normal text-muted-foreground">
-                      {decisions[r.adres] ?? r.voorstel}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <p className="border-t p-3 text-[11px] leading-relaxed text-muted-foreground">
-              {nl.attribution} · {t.sampleNote}
-            </p>
-          </Panel>
-        ) : (
-          <Nothing title={t.emptyTitle} description={t.emptyNote}>
-            <Button onClick={() => setQuery("")}>{t.clear}</Button>
-          </Nothing>
-        )}
-      </div>
-      {selected && <aside className="xl:sticky xl:top-20">{details}</aside>}
-    </div>
-  );
+  const { selected, rows, setSelected, decisions, setQuery, details } = useDesk();
+  const columns: DeskColumn<DemoRecord>[] = [
+    { id: "address", label: t.columns[0], value: (r) => r.adres, required: true },
+    { id: "name", label: t.columns[1], value: (r) => r.naam + " " + r.ondNr + " " + r.vestNr, required: true,
+      cell: (r) => <div className="min-w-36"><Button variant="link" className="h-auto justify-start whitespace-normal p-0 text-left text-xs text-foreground" onClick={() => setSelected(r)}>{r.naam}</Button><p className="mt-1 text-[11px] text-muted-foreground">{r.soort}</p></div> },
+    { id: "register", label: t.columns[2], value: (r) => r.register, filter: true, cell: (r) => <Badge variant={r.register === "Ontbreekt" ? "destructive" : "outline"}>{r.register}</Badge> },
+    { id: "evidence", label: t.columns[3], value: (r) => r.bewijs[0]?.bron ?? "—" },
+    { id: "observed", label: t.columns[4], value: (r) => r.laatste, sortable: false },
+    { id: "confidence", label: t.columns[5], value: (r) => r.zekerheid, filter: true, cell: (r) => <Confidence value={r.zekerheid} /> },
+    { id: "proposal", label: t.columns[6], value: (r) => decisions[r.adres] ?? r.voorstel, filter: true },
+  ];
+  return <div className={cn("grid items-start gap-4", selected && "xl:grid-cols-[minmax(0,1.6fr)_minmax(310px,.95fr)]")}>
+    <div className="min-w-0">{rows.length ? <Panel>
+      <DeskDataTable data={rows} columns={columns} getId={(r) => r.adres} rowLabel={(r) => r.naam} activeId={selected?.adres} />
+      <p className="border-t p-3 text-[11px] leading-relaxed text-muted-foreground">{nl.attribution} · {t.sampleNote}</p>
+    </Panel> : <Nothing title={t.emptyTitle} description={t.emptyNote}><Button onClick={() => setQuery("")}>{t.clear}</Button></Nothing>}</div>
+    {selected && <aside className="xl:sticky xl:top-20">{details}</aside>}
+  </div>;
 }
 
 export function ReviewView() {
   const { queue, openRecord, ask } = useDesk();
-  return queue.length ? (
-    <Panel>
-      <Table>
-        <TableHeader className="bg-muted/60">
-          <TableRow>
-            {[
-              t.proposal,
-              t.columns[0],
-              t.enterprise,
-              t.certainty,
-              t.source,
-              t.decision,
-            ].map((c) => (
-              <TableHead key={c} className="text-xs">
-                {c}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {queue.map((r) => (
-            <TableRow key={r.adres}>
-              <TableCell className="max-w-64 whitespace-normal text-xs font-medium">
-                {r.voorstel}
-              </TableCell>
-              <TableCell className="text-xs">{r.adres}</TableCell>
-              <TableCell className="text-xs">{r.naam}</TableCell>
-              <TableCell>
-                <Confidence value={r.zekerheid} />
-              </TableCell>
-              <TableCell className="text-xs text-muted-foreground">
-                {r.bewijs[0]?.bron}
-              </TableCell>
-              <TableCell className="space-x-2 text-right">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => openRecord(r)}
-                >
-                  {t.evidence}
-                </Button>
-                <Button size="sm" onClick={() => ask(r, "Bevestigd")}>
-                  {t.confirm}
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Panel>
-  ) : (
-    <Nothing title={t.noQueue} description={t.noQueueNote} />
-  );
+  const columns: DeskColumn<DemoRecord>[] = [
+    { id: "proposal", label: t.proposal, value: (r) => r.voorstel, filter: true },
+    { id: "address", label: t.columns[0], value: (r) => r.adres, required: true },
+    { id: "name", label: t.enterprise, value: (r) => r.naam, required: true },
+    { id: "confidence", label: t.certainty, value: (r) => r.zekerheid, filter: true, cell: (r) => <Confidence value={r.zekerheid} /> },
+    { id: "source", label: t.source, value: (r) => r.bewijs[0]?.bron ?? "—", filter: true },
+    { id: "actions", label: t.decision, value: () => "", sortable: false, required: true,
+      cell: (r) => <div className="flex items-center gap-2"><Button size="sm" variant="outline" onClick={() => openRecord(r)}>{t.evidence}</Button><Button size="sm" onClick={() => ask(r, "Bevestigd")}>{t.confirm}</Button><Button size="sm" variant="ghost" onClick={() => ask(r, "Afgewezen")}>{t.reject}</Button></div> },
+  ];
+  return queue.length ? <Panel><DeskDataTable data={queue} columns={columns} getId={(r) => r.adres} rowLabel={(r) => r.naam} /></Panel> : <Nothing title={t.noQueue} description={t.noQueueNote} />;
 }
 
 export function HistoryView() {
   const { history } = useDesk();
-  return history.length ? (
-    <Panel>
-      <Table>
-        <TableHeader className="bg-muted/60">
-          <TableRow>
-            {[
-              t.time,
-              t.record,
-              t.change,
-              t.evidence,
-              t.employee,
-              t.status,
-              t.reason,
-            ].map((c) => (
-              <TableHead key={c} className="text-xs">
-                {c}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {history.map((e) => (
-            <TableRow key={e.id}>
-              <TableCell className="text-xs text-muted-foreground">
-                {e.when}
-              </TableCell>
-              <TableCell className="text-xs">{e.record.vestNr}</TableCell>
-              <TableCell className="max-w-52 whitespace-normal text-xs">
-                {e.record.voorstel}
-              </TableCell>
-              <TableCell className="max-w-56 whitespace-normal text-xs text-muted-foreground">
-                {e.record.bewijs
-                  .map((b) => b.bron + " · " + b.datum)
-                  .join("; ")}
-              </TableCell>
-              <TableCell className="text-xs">{e.who}</TableCell>
-              <TableCell>
-                <Badge variant="outline">{e.status}</Badge>
-              </TableCell>
-              <TableCell className="max-w-48 whitespace-normal text-xs">
-                {e.reason || "—"}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Panel>
-  ) : (
-    <Nothing title={t.noHistory} description={t.noHistoryNote} />
-  );
+  const columns: DeskColumn<Entry>[] = [
+    { id: "time", label: t.time, value: (e) => e.id, cell: (e) => e.when },
+    { id: "record", label: t.record, value: (e) => e.record.vestNr, required: true },
+    { id: "change", label: t.change, value: (e) => e.record.voorstel, filter: true },
+    { id: "evidence", label: t.evidence, value: (e) => e.record.bewijs.map((b) => b.bron + " · " + b.datum).join("; ") },
+    { id: "officer", label: t.employee, value: (e) => e.who, filter: true },
+    { id: "status", label: t.status, value: (e) => e.status, filter: true, cell: (e) => <Badge variant="outline">{e.status}</Badge> },
+    { id: "reason", label: t.reason, value: (e) => e.reason || "—" },
+  ];
+  return history.length ? <Panel><DeskDataTable data={history} columns={columns} getId={(e) => String(e.id)} rowLabel={(e) => e.record.naam} /></Panel> : <Nothing title={t.noHistory} description={t.noHistoryNote} />;
 }
 
 export function MapView() {
