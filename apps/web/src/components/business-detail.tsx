@@ -1,4 +1,8 @@
 "use client";
+import { PrioritySummary, SourceChanges } from "./control-insights";
+import { BusinessSources } from "./business-sources";
+import { useMutation } from "@tanstack/react-query";
+import { LoadingStatus } from "./desk-loading";
 import { useState, type ReactNode } from "react";
 import type { Detail } from "@straatbeeld/contracts";
 import {
@@ -103,22 +107,8 @@ export function Evidence({
                   ? item.excerpt
                   : item.value || item.excerpt
               }
-              showOriginal={false}
             />
-            {item.value && item.value !== item.excerpt ? (
-              <details
-                className="source-excerpt"
-                open={normalizedField(item.field) !== "openinghours"}
-              >
-                <summary>{t.sourceText}</summary>
-                <blockquote>{item.excerpt}</blockquote>
-              </details>
-            ) : normalizedField(item.field) !== "openinghours" ? null : (
-              <details className="source-excerpt">
-                <summary>{t.sourceText}</summary>
-                <blockquote>{item.excerpt}</blockquote>
-              </details>
-            )}
+
           </div>
           <footer className="evidence-meta">
             <span>
@@ -164,7 +154,7 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
         {desk.screen === "review" ? u.backReview : u.back}
       </Button>
       <header className="business-heading">
-        <BusinessAvatar name={e.name} />
+        <BusinessAvatar name={e.name} seed={e.id} />
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{e.name}</h1>
           <p className="mt-2 text-base text-muted-foreground">
@@ -278,31 +268,15 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
             <Evidence items={sourceContacts} />
           </Disclosure>
         )}
+        <SourceChanges detail={detail} />
         <Disclosure title={`${u.allSources} (${detail.sources.length})`}>
-          <Evidence items={evidenceGroups(detail)} />
-          {detail.sources
-            .filter(
-              (s) => !detail.evidence.some((item) => item.sourceId === s.id),
-            )
-            .map((s) => (
-              <p key={s.id}>
-                <a
-                  href={s.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                >
-                  {s.publisher}
-                </a>{" "}
-                · {u.fetched} {sourceDate(s.retrievedAt)}
-              </p>
-            ))}
+          <BusinessSources detail={detail} />
           <Button
             variant="outline"
             disabled={desk.busy}
             onClick={() => desk.guard(() => void desk.refresh(e.id))}
           >
-            {desk.busy ? u.refreshing : u.refresh}
+            {desk.busy ? <LoadingStatus label={u.refreshing} /> : u.refresh}
           </Button>
         </Disclosure>
         <Disclosure title={`${u.audit} (${detail.reviews.length})`}>
@@ -362,14 +336,16 @@ function ProposalReview({
       revision: p.revision,
     });
   }
+  const reviewMutation = useMutation({
+    mutationFn: (body: string) => api("/api/reviews", { method: "POST", body }),
+  });
   async function decide(decision: "approve" | "reject") {
     if (desk.busy || stale) return;
     desk.setBusy(true);
     setFailure("");
     try {
-      await api("/api/reviews", {
-        method: "POST",
-        body: JSON.stringify({
+      await reviewMutation.mutateAsync(
+        JSON.stringify({
           proposalId: p.id,
           expectedRevision: draft?.revision ?? p.revision,
           decision,
@@ -378,7 +354,7 @@ function ProposalReview({
             : {}),
           note: draft?.note ?? "",
         }),
-      });
+      );
       desk.setDraft(p.id, null);
       setCompleted(decision);
       setRevising(false);
@@ -429,6 +405,7 @@ function ProposalReview({
               : u.rejected}
         </StatusPill>
       </div>
+      <PrioritySummary detail={detail} proposalId={p.id} expanded />
       <div
         className={`comparison-grid ${!p.before ? "comparison-no-prior" : ""}`}
       >
@@ -618,11 +595,13 @@ function ProposalReview({
                       )
                     }
                   >
-                    {desk.busy
-                      ? u.saving
-                      : draft.mode === "reject"
-                        ? u.saveReject
-                        : u.save}
+                    {desk.busy ? (
+                      <LoadingStatus label={u.saving} />
+                    ) : draft.mode === "reject" ? (
+                      u.saveReject
+                    ) : (
+                      u.save
+                    )}
                   </Button>
                   <Button
                     variant="outline"
@@ -638,7 +617,7 @@ function ProposalReview({
                     disabled={desk.busy || stale || !evidence.length}
                     onClick={() => void decide("approve")}
                   >
-                    {desk.busy ? u.saving : u.approve}
+                    {desk.busy ? <LoadingStatus label={u.saving} /> : u.approve}
                   </Button>
                   <Button
                     disabled={desk.busy}

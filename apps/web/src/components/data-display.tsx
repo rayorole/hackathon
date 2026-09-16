@@ -1,3 +1,9 @@
+"use client";
+import { useMemo } from "react";
+import Image from "next/image";
+import { Style, Avatar } from "@dicebear/core";
+import definition from "@dicebear/styles/squircles.json" with { type: "json" };
+const avatarStyle = new Style(definition);
 import type { ReactNode } from "react";
 import {
   Clock3,
@@ -6,7 +12,6 @@ import {
   Globe2,
   MapPin,
   Building2,
-  ChevronDown,
   Check,
   Minus,
   CircleHelp,
@@ -58,11 +63,9 @@ export function StatusPill({
 export function FieldValue({
   field,
   value,
-  showOriginal = true,
 }: {
   field: string;
   value: string | null | undefined;
-  showOriginal?: boolean;
 }) {
   const schedule =
     normalizedField(field) === "openinghours" ? openingHours(value) : null;
@@ -73,7 +76,7 @@ export function FieldValue({
         <span>{t.notKnown}</span>
       </div>
     );
-  if (schedule)
+  if (schedule && !schedule.rows.some((row) => row.periods.includes("Zie brontekst")))
     return (
       <div className="hours-display">
         <table className="hours-table">
@@ -117,15 +120,7 @@ export function FieldValue({
             {note}
           </p>
         ))}
-        {showOriginal && (
-          <details className="original-value">
-            <summary>
-              {t.original}
-              <ChevronDown className="size-3.5" />
-            </summary>
-            <p className="whitespace-pre-wrap break-words">{value}</p>
-          </details>
-        )}
+
       </div>
     );
   return (
@@ -138,10 +133,11 @@ export function FieldValue({
     </div>
   );
 }
-export function BusinessAvatar({ name }: { name: string }) {
+export function BusinessAvatar({ name, seed }: { name: string; seed?: string }) {
+  const src = useMemo(() => new Avatar(avatarStyle, { seed: seed ?? name, tags: ["animation"], animationVariant: "slowest" }).toDataUri(), [name, seed]);
   return (
     <span className="business-avatar" aria-hidden>
-      {name.trim().slice(0, 2).toLocaleUpperCase("nl-BE")}
+      <Image src={src} alt="" width={60} height={60} unoptimized />
     </span>
   );
 }

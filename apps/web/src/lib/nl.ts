@@ -502,7 +502,7 @@ export const presentationNl = {
   closed: "Gesloten",
   appointment: "Op afspraak",
   original: "Oorspronkelijke tekst",
-  sourceText: "Volledig bronfragment",
+  sourceText: "Bronfragment",
   sourceValue: "Vermeld in deze bron",
   local: "Deze vestiging",
   enterprise: "Onderneming",
@@ -565,3 +565,87 @@ export const presentationNl = {
   downloadDescription:
     "Kies de straat of neem alle goedgekeurde wijzigingen in Schoten mee.",
 } as const;
+export const loadingNl = {
+  loading: "Gegevens laden…",
+  refreshing: "Bijwerken…",
+  downloading: "Downloaden…",
+  decisions: "beslissingen",
+  sources: "Bronnen",
+  sourceSearch: "Zoek een bron of website…",
+  sourceCount: "bronvermeldingen",
+  sourceSummary: "Register en websites, gegroepeerd per uitgever.",
+  coverage: "Over deze steekproef",
+  coverageNote: "1.000 registerrecords · gedeeltelijke steekproef. Een vermelding bewijst geen actuele activiteit.",
+  dateNote: "Een ophaaldatum is geen waarnemingsdatum. Ontbrekende gegevens betekenen niet dat een zaak gesloten is.",
+  observations: "Waarnemingen",
+  unknownDate: "Waarnemingsdatum onbekend",
+  noSources: "Geen bronnen gevonden.",
+  register: "Digitaal Vlaanderen · KBO",
+  previous: "Vorige",
+  next: "Volgende",
+  latest: "Laatst opgehaald",
+  local: "lokale vestigingen",
+} as const;
+
+export const polishNl = {
+  searchPlaceholder: "Naam, adres of ondernemingsnummer…",
+  clearSearch: "Zoekopdracht wissen",
+  removeStreet: "Straatfilter wissen",
+  allStreets: "Alle straten",
+  allBusinesses: "Alle zaken bekijken",
+  hoursSummary: "Weekrooster bekijken",
+  illustration: "AI-illustratie · fictief straatbeeld",
+  avatarNote: "Decoratieve avatars: DiceBear Squircles. Geen bedrijfslogo’s.",
+  ready: "Uw werklijst is bijgewerkt",
+  pending: "Klaar voor uw controle",
+} as const;
+
+export const sourcesNl = {
+  directory: "Bronnenregister",
+  search: "Zoek een zaak, bron of website…",
+  type: "Brontype",
+  all: "Alle bronnen",
+  linkedBusiness: "Gekoppelde zaak",
+  source: "Bron",
+  otherBusinesses: "andere zaken",
+  snapshot: "Registerpeildatum",
+  kinds: { registry: "Officieel register", website: "Website", observation: "Waarneming" },
+  fields: { registryregistration: "Vestigingsnummer", registrationdate: "Inschrijvingsdatum", startdate: "Startdatum" },
+  observations: "gegevens uit deze bron",
+  open: "Bron openen",
+  retrieved: "Opgehaald",
+  observed: "Waargenomen",
+  demo: "Demobron",
+  noObservations: "Nog geen waarnemingen uit deze bron.",
+  empty: "Nog geen bronnen beschikbaar.",
+} as const;
+
+export const emptyNl = {
+  companies: "Geen zaken gevonden",
+  companiesNote: "Er zijn nog geen zaken beschikbaar in deze werklijst.",
+  filtersNote: "Probeer een andere zoekterm of wis de filters om alles te bekijken.",
+  reset: "Zoekopdracht en filters wissen",
+  sourcesFiltered: "Geen bronnen gevonden",
+  sourcesNote: "Zodra er bronnen aan zaken gekoppeld zijn, verschijnen ze hier.",
+  businessSourcesNote: "Voor deze zaak zijn nog geen bronnen beschikbaar. Controleer de bronnen om nieuwe informatie op te halen.",
+  retryNote: "De gegevens konden niet worden geladen. Probeer het opnieuw.",
+} as const;
+
+export const controlNl = {
+  priority: "Controleprioriteit",
+  levels: { high: "Eerst controleren", attention: "Aandacht nodig", normal: "Normale controle" },
+  reasons: { conflict: "Tegenstrijdig bewijs", "missing-evidence": "Onderbouwing ontbreekt", nonlocal: "Geen bevestigend lokaal bewijs", stale: "Waarneming ouder dan 180 dagen", "unknown-date": "Waarnemingsdatum onbekend" },
+  priorityNote: "Volgorde voor controle, geen oordeel over activiteit. Oud betekent: meer dan 180 dagen sinds de waarneming.",
+  changes: "Sinds de vorige broncontrole",
+  changesNote: "Vergelijking van de laatste twee bewaarde versies per bron. Nieuwe brongegevens zijn nog niet goedgekeurd.",
+  noChanges: "Geen vergelijkbare bronwijzigingen",
+  noChangesNote: "Er zijn nog geen twee vergelijkbare versies met verschillende waarden. Dit bewijst niet dat de zaak ongewijzigd is.",
+  previous: "Eerder opgehaald", latest: "Later opgehaald", source: "Bron openen", local: "Deze vestiging", enterprise: "Onderneming", unknownScope: "Locatie onbekend",
+};
+export const candidateNl = {
+  loading: "Meldingen laden…",
+  report: "Ontbrekende zaak melden", title: "Een zaak toevoegen ter controle", intro: "Vul het adres en uw bron in. De melding verschijnt eerst bij Wijzigingen.",
+  name: "Naam van de zaak", street: "Straat", number: "Huisnummer", postal: "Postcode", municipality: "Gemeente", publisher: "Naam van de bron", url: "Bron-URL", observation: "Wat heeft u waargenomen?", date: "Waarnemingsdatum", submit: "Melding opslaan", cancel: "Annuleren", saving: "Opslaan…", note: "Toelichting bij de beslissing", approve: "Zaak bevestigen", reject: "Melding afwijzen",
+  saved: "De zaak is gemeld en wacht op beoordeling.", error: "De melding kon niet worden opgeslagen. Controleer de velden en probeer opnieuw.",
+  pending: "Gemelde zaken ter controle", accepted: "Bevestigde aanvullingen", history: "Beoordeelde meldingen", candidate: "Melding · nog niet bevestigd", approved: "Bevestigd", rejected: "Afgewezen", approvedNote: "Door een medewerker bevestigd. KBO-registratie nog niet vastgesteld.", source: "Bron", observed: "Waargenomen op", reported: "Gemeld op", duplicateNote: "Controleer eerst of deze zaak al in de lijst staat.", decision: "Beslissing opgeslagen.", loadError: "Meldingen konden niet worden geladen.", retry: "Opnieuw proberen", noMatches: "Geen bevestigde aanvullingen voor deze selectie", updated: "Beoordeeld op", confirmNote: "U bevestigt deze melding voor de gemeentelijke werklijst. Dit is geen KBO-registratie.",
+};

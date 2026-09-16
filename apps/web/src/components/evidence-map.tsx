@@ -1,12 +1,10 @@
 "use client";
+import { DeskEmpty } from "./desk-empty";
+import { emptyNl } from "@/lib/nl";
 
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-} from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Search,
   LocateFixed,
@@ -19,9 +17,9 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { loadWorkspace } from "@/lib/officer-data";
+import { DeskSkeleton, LoadingStatus } from "./desk-loading";
 import { apiFetch } from "@/lib/api";
-import { mapNl as t, nl } from "@/lib/nl";
+import { mapNl as t } from "@/lib/nl";
 import {
   coordinateState,
   filterMapRecords,
@@ -46,43 +44,25 @@ const MapCanvas = dynamic(() => import("@/components/evidence-map-canvas"), {
   ssr: false,
   loading: () => (
     <div className="grid h-full place-items-center text-sm text-muted-foreground">
-      {t.mapLoading}
+      <LoadingStatus label={t.mapLoading} />
     </div>
   ),
 });
-const emptyEntries: MapEntry[] = [];
-
-async function loadMapRecords(signal: AbortSignal): Promise<MapEntry[]> {
-  const [details, response] = await Promise.all([
-    loadWorkspace(),
-    apiFetch("/api/locations", { signal }),
-  ]);
-  const locations = await response.json();
-  return details.map((detail) => toMapEntry(detail, locations));
-}
-
 export function EvidenceMap() {
-  const [client] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
-      }),
-  );
-  return (
-    <QueryClientProvider client={client}>
-      <MapWorkspace />
-    </QueryClientProvider>
-  );
+  return <MapWorkspace />;
 }
 
 export function MapWorkspace() {
-  const records = useQuery({
-    queryKey: ["map-records"],
-    queryFn: ({ signal }) => loadMapRecords(signal),
-    staleTime: 60_000,
-  });
-  const entries = records.data ?? emptyEntries;
   const desk = useDesk();
+  const records = useQuery({
+    queryKey: ["locations", desk.officerId],
+    queryFn: async ({ signal }) =>
+      (await apiFetch("/api/locations", { signal })).json(),
+  });
+  const entries = useMemo(
+    () => desk.dossiers.map((detail) => toMapEntry(detail, records.data ?? {})),
+    [desk.dossiers, records.data],
+  );
   const { query, setQuery } = desk;
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [visibleOnly, setVisibleOnly] = useState(false);
@@ -138,8 +118,13 @@ export function MapWorkspace() {
           variant="ghost"
           size="sm"
           className="ml-auto"
-          disabled={records.isFetching}
-          onClick={() => void records.refetch()}
+          disabled={records.isFetching || desk.fetching}
+          onClick={() => {
+            void Promise.all([
+              records.refetch({ throwOnError: true }),
+              desk.reload(),
+            ]).catch((e) => desk.setError(e.message));
+          }}
         >
           <RefreshCw
             className={cn("size-3.5", records.isFetching && "animate-spin")}
@@ -154,7 +139,12 @@ export function MapWorkspace() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => void records.refetch()}
+              onClick={() => {
+                void Promise.all([
+                  records.refetch({ throwOnError: true }),
+                  desk.reload(),
+                ]).catch((e) => desk.setError(e.message));
+              }}
             >
               {t.retry}
             </Button>
@@ -198,13 +188,19 @@ export function MapWorkspace() {
         </div>
         <div className="grid lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="relative h-[440px] min-w-0 bg-muted sm:h-[540px] lg:h-[640px]">
-            <MapCanvas
-              entries={located}
-              selected={selected}
-              onSelect={setSelected}
-              onBounds={setBounds}
-              fitRequest={fitRequest}
-            />
+            {records.isPending ? (
+              <div className="p-5">
+                <DeskSkeleton />
+              </div>
+            ) : (
+              <MapCanvas
+                entries={located}
+                selected={selected}
+                onSelect={setSelected}
+                onBounds={setBounds}
+                fitRequest={fitRequest}
+              />
+            )}
           </div>
           <aside
             aria-label={t.results}
@@ -251,22 +247,13 @@ export function MapWorkspace() {
                       {t.loading}
                     </p>
                   ) : !shown.length ? (
-                    <div className="space-y-2 p-5">
-                      <MapPin className="size-6 text-muted-foreground" />
-                      <h3 className="text-sm font-medium">{t.empty}</h3>
-                      <p className="text-xs leading-relaxed text-muted-foreground">
-                        {entries.length
-                          ? t.emptyNote
-                          : records.isError
-                            ? t.loadError
-                            : t.noData}
-                      </p>
+                    <DeskEmpty className="p-5" icon={<MapPin />} title={records.isError ? t.loadError : t.empty} description={entries.length ? t.emptyNote : records.isError ? emptyNl.retryNote : t.noData}>
                       {hasFilters && (
                         <Button size="sm" variant="outline" onClick={clear}>
                           {t.clear}
                         </Button>
                       )}
-                    </div>
+                    </DeskEmpty>
                   ) : (
                     shown
                       .slice(currentPage * 25, currentPage * 25 + 25)
@@ -367,7 +354,6 @@ export function MapWorkspace() {
         </div>
       </details>
       <p className="text-[11px] text-muted-foreground">
-        {nl.attribution}{" "}
         <a
           href="https://data.vlaanderen.be/id/licentie/modellicentie-gratis-hergebruik/v1.0"
           target="_blank"

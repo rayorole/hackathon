@@ -1,4 +1,19 @@
 "use client";
+import { DeskEmpty } from "./desk-empty";
+import { emptyNl } from "@/lib/nl";
+import Image from "next/image";
+import Link from "next/link";
+import { PrioritySummary } from "./control-insights";
+import { ReportBusiness, CandidateList } from "./candidate-businesses";
+import { AnimatedDisclosure } from "./animated-disclosure";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./ui/select";
+import { SlidersHorizontal, X } from "lucide-react";
+import { polishNl as polish } from "@/lib/nl";
+import { useMutation } from "@tanstack/react-query";
+import { DeskQueryProvider } from "./desk-query-provider";
+import { DeskSkeleton, LoadingStatus } from "./desk-loading";
+import { SourcesRegistry } from "./sources-registry";
+import { loadingNl as loadingText } from "@/lib/nl";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Search,
@@ -25,13 +40,13 @@ import {
   FieldValue,
 } from "./data-display";
 import { presentationNl as t } from "@/lib/nl";
-import { api, fieldLabel, sourceDate } from "@/lib/officer-data";
-import { approvedChanges, evidenceGroups } from "@/lib/review-presentation";
-import { uxNl as u, nl } from "@/lib/nl";
+import { api, fieldLabel, toRecord } from "@/lib/officer-data";
+import { normalizedField, approvedChanges } from "@/lib/review-presentation";
+import { uxNl as u } from "@/lib/nl";
 import { OfficerSidebar } from "./officer-sidebar";
 import { DeskCommandBar } from "./desk-command-bar";
 import { DeskProvider, useDesk } from "./desk-context";
-import { BusinessDetail, Disclosure, Evidence } from "./business-detail";
+import { BusinessDetail, Disclosure } from "./business-detail";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -58,9 +73,11 @@ export function OfficerDesk({
   children: ReactNode;
 }) {
   return (
-    <DeskProvider officer={officer} officerId={officerId}>
-      <DeskShell defaultOpen={defaultOpen}>{children}</DeskShell>
-    </DeskProvider>
+    <DeskQueryProvider key={officerId}>
+      <DeskProvider officer={officer} officerId={officerId}>
+        <DeskShell defaultOpen={defaultOpen}>{children}</DeskShell>
+      </DeskProvider>
+    </DeskQueryProvider>
   );
 }
 function DeskShell({
@@ -83,7 +100,7 @@ function DeskShell({
     >
       <OfficerSidebar
         officer={desk.officer}
-        queueCount={desk.queue.length}
+        queueCount={desk.queue.length + desk.candidates.filter(c => c.status === "pending").length}
         recordCount={desk.records.length}
         onNavigate={desk.navigate}
         onBeforeLeave={desk.guard}
@@ -98,6 +115,9 @@ function DeskShell({
               / {u.titles[desk.screen]}
             </span>
           </div>
+          {desk.fetching && !desk.loading && (
+            <LoadingStatus label={loadingText.refreshing} />
+          )}
           <div className="ml-auto hidden sm:block">
             <DeskCommandBar
               records={desk.records}
@@ -118,16 +138,14 @@ function DeskShell({
           id="main-content"
           className="desk-main space-y-7 p-5 md:p-8 lg:p-10"
         >
-          {!desk.selected && (
+          {!desk.selected && desk.screen !== "overview" && (
             <header className="page-heading">
               <h1 className="text-2xl font-semibold tracking-tight">
                 {u.titles[desk.screen]}
               </h1>
               {!["street", "map"].includes(desk.screen) && (
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                  {desk.screen === "overview"
-                    ? t.startIntro
-                    : desk.screen === "review"
+                  {desk.screen === "review"
                       ? t.reviewIntro
                       : desk.screen === "history"
                         ? t.historyIntro
@@ -176,11 +194,7 @@ function DeskShell({
             </p>
           )}
           {desk.loading ? (
-            <div role="status" className="max-w-3xl space-y-4">
-              <p>{u.loading}</p>
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-24 w-full" />
-            </div>
+            <DeskSkeleton detail={desk.params.has("zaak")} />
           ) : desk.error && !desk.dossiers.length ? null : desk.selected ? (
             <BusinessDetail detail={desk.selected} />
           ) : desk.params.has("zaak") ? (
@@ -194,7 +208,6 @@ function DeskShell({
             children
           )}
           <footer className="mt-10 border-t pt-5 text-xs leading-relaxed text-muted-foreground">
-            <p>{nl.attribution}</p>
             <button
               className="mt-2 underline underline-offset-4"
               onClick={() => desk.navigate("sources")}
@@ -211,30 +224,31 @@ export function BusinessSearch({ submit = false }: { submit?: boolean }) {
   const desk = useDesk();
   return (
     <form
-      className="business-search w-full max-w-2xl space-y-2"
+      className="business-search min-w-0 flex-1 space-y-2"
       onSubmit={(e) => {
         e.preventDefault();
         desk.navigate("street");
       }}
     >
-      <Label htmlFor="business-search">{u.search}</Label>
+      <Label className="sr-only" htmlFor="business-search">{u.search}</Label>
       <div className="flex gap-2">
         <div className="relative min-w-0 flex-1">
           <Search
             aria-hidden
-            className="absolute left-3 top-3 size-4 text-muted-foreground"
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             id="business-search"
             aria-label={u.search}
-            className="h-11 pl-10 text-base"
-            placeholder="Bijvoorbeeld Paalstraat of Amplifon"
+            className="h-10 pl-10 pr-10 text-sm"
+            placeholder={polish.searchPlaceholder}
             value={desk.query}
             onChange={(e) => desk.setQuery(e.target.value)}
           />
+          {desk.query && <Button type="button" variant="ghost" size="icon-sm" className="absolute right-1 top-1/2 -translate-y-1/2" aria-label={polish.clearSearch} onClick={() => desk.setQuery("")}><X className="size-3.5" /></Button>}
         </div>
         {submit && (
-          <Button type="submit" className="h-11">
+          <Button type="submit" className="h-10">
             {u.find}
           </Button>
         )}
@@ -250,7 +264,7 @@ export function BusinessViewTabs() {
   return (
     <nav
       aria-label="Weergave zaken"
-      className="flex gap-1 rounded-lg border p-1 w-fit"
+      className="view-switch flex shrink-0 gap-1 rounded-lg bg-muted p-1 w-fit"
     >
       <Button
         variant={desk.screen === "street" ? "secondary" : "ghost"}
@@ -276,61 +290,19 @@ export function OverviewView() {
   const count = desk.queue.length;
   return (
     <div className="overview-layout">
-      <section className="start-focus surface-panel">
-        <div className="focus-top">
-          <span className="focus-icon">
-            <ClipboardCheck className="size-6" />
-          </span>
-          <StatusPill state={count ? "pending" : "approved"}>
-            {count ? u.pendingStatus : u.noPending}
-          </StatusPill>
+      <section className="home-search-hero">
+        <Image className="home-hero-image" src="/images/straatbeeld-street.webp" alt="" fill sizes="100vw" priority />
+        <div className="home-hero-content">
+          <h1>{t.searchTitle}</h1>
+          <p>{t.searchDescription}</p>
+          <BusinessSearch submit />
+          <Button variant="outline" className="home-browse-button" onClick={() => desk.guard(() => desk.updateParams({ q: null, street: null, page: null, zaak: null, voorstel: null }, "street"))}>
+            <Building2 className="size-4" />
+            {polish.allBusinesses}
+            <span className="text-muted-foreground">{desk.records.length}</span>
+            <ArrowRight className="size-4" />
+          </Button>
         </div>
-        <div className="focus-content">
-          <h2>
-            {count === 0
-              ? u.noPending
-              : count === 1
-                ? "1 wijziging wacht op controle"
-                : `${count} wijzigingen wachten op controle`}
-          </h2>
-          <p>
-            {count
-              ? "Bekijk wat mogelijk aangepast moet worden. U beslist op basis van de bronnen."
-              : u.noPendingNote}
-          </p>
-          {count > 0 && (
-            <Button
-              className="mt-5"
-              onClick={() => desk.openRecord(desk.queue[0], "review")}
-            >
-              {u.start}
-              <ArrowRight className="size-4" />
-            </Button>
-          )}
-        </div>
-        <div className="focus-footer">
-          <ShieldCheck className="size-4" />
-          <span>{t.reviewTipNote}</span>
-        </div>
-      </section>
-      <section className="start-search surface-panel">
-        <div className="flex items-center gap-3">
-          <span className="section-icon">
-            <Search className="size-5" />
-          </span>
-          <h2 className="text-lg font-semibold">{t.searchTitle}</h2>
-        </div>
-        <p className="text-sm text-muted-foreground">{t.searchDescription}</p>
-        <BusinessSearch submit />
-        <button
-          className="explore-link"
-          onClick={() => desk.navigate("street")}
-        >
-          <Building2 className="size-4" />
-          {t.explore}
-          <span>{desk.records.length}</span>
-          <ArrowRight className="size-4" />
-        </button>
       </section>
       {count > 0 && (
         <section className="start-queue surface-panel">
@@ -354,7 +326,7 @@ export function OverviewView() {
                 onClick={() => desk.openRecord(r, "review")}
                 className="business-item"
               >
-                <BusinessAvatar name={r.naam} />
+                <BusinessAvatar name={r.naam} seed={r.id} />
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">{r.naam}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -394,49 +366,25 @@ export function StreetView() {
   return (
     <div className="space-y-5">
       <div className="directory-toolbar surface-panel">
-        <div className="flex flex-wrap items-end justify-between gap-5">
+        <div className="directory-search-row">
           <BusinessSearch />
           <BusinessViewTabs />
+          <ReportBusiness />
         </div>
-        <details className="max-w-xl">
-          <summary className="cursor-pointer text-sm underline underline-offset-4">
-            {u.filters}
-            {desk.street ? ` · ${desk.street}` : ""}
-          </summary>
-          <label className="mt-3 block text-sm">
-            {u.street}
-            <select
-              className="ml-3 rounded border bg-background px-3 py-2"
-              value={desk.street}
-              onChange={(e) => desk.setStreet(e.target.value)}
-            >
-              <option value="">{u.allStreets}</option>
-              {desk.streets.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-          </label>
-        </details>
-        {(desk.query || desk.street) && (
-          <div className="flex flex-wrap gap-3 text-sm">
-            <span>
-              {desk.query ? `Zoeken: ${desk.query}` : ""}{" "}
-              {desk.street ? `· ${desk.street}` : ""}
-            </span>
-            <button
-              className="underline"
-              onClick={() =>
-                desk.updateParams(
-                  { q: null, street: null, page: null },
-                  undefined,
-                  true,
-                )
-              }
-            >
-              {u.clear}
-            </button>
-          </div>
-        )}
+        <div className="directory-filter-row">
+          <AnimatedDisclosure label={<><SlidersHorizontal className="size-3.5" />{u.filters}{desk.street && <span className="filter-count">1</span>}</>} className="street-filter">
+            <Label htmlFor="street-filter">{u.street}</Label>
+            <Select value={desk.street} onValueChange={(value) => desk.setStreet(value ?? "")}>
+              <SelectTrigger id="street-filter" className="mt-2 w-full"><SelectValue>{desk.street || u.allStreets}</SelectValue></SelectTrigger>
+              <SelectContent alignItemWithTrigger={false}>
+                <SelectItem value="">{u.allStreets}</SelectItem>
+                {desk.streets.map((street) => <SelectItem key={street} value={street}>{street}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </AnimatedDisclosure>
+          {desk.street && <Button variant="secondary" size="sm" onClick={() => desk.setStreet("")} aria-label={polish.removeStreet + ": " + desk.street}>{desk.street}<X className="size-3" /></Button>}
+          {(desk.query || desk.street) && <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => desk.updateParams({ q: null, street: null, page: null }, undefined, true)}>{u.clear}</Button>}
+        </div>
       </div>
       <div className="surface-panel data-table-panel">
         <PanelTitle
@@ -460,19 +408,18 @@ export function StreetView() {
               );
               return (
                 <TableRow key={r.id}>
-                  <TableCell className="max-w-80 whitespace-normal px-5 py-4">
+                  <TableCell className="max-w-80 px-5 py-3">
                     <button
-                      className="flex items-center gap-3 text-left text-sm font-semibold hover:text-primary"
+                      className="business-cell flex min-w-0 max-w-full items-center gap-3 text-left text-sm font-medium hover:text-primary"
+                      title={r.naam}
                       onClick={() => desk.openRecord(r)}
                     >
-                      <BusinessAvatar name={r.naam} />
-                      <span>{r.naam}</span>
+                      <BusinessAvatar name={r.naam} seed={r.id} />
+                      <span className="truncate">{r.naam}</span>
                     </button>
                   </TableCell>
-                  <TableCell className="whitespace-normal text-sm">
-                    {r.adres}
-                  </TableCell>
-                  <TableCell className="whitespace-normal text-sm">
+                  <TableCell className="text-sm">{r.adres}</TableCell>
+                  <TableCell className="text-sm">
                     {pending.length > 0 ? (
                       <button
                         className="field-chip"
@@ -483,8 +430,8 @@ export function StreetView() {
                           : `${pending.length} wijzigingen`}
                       </button>
                     ) : (
-                      <span className="text-muted-foreground">
-                        {u.noChange}
+                      <span className="text-muted-foreground" aria-label={u.noChange} title={u.noChange}>
+                        —
                       </span>
                     )}
                   </TableCell>
@@ -493,24 +440,10 @@ export function StreetView() {
             })}
           </TableBody>
         </Table>
-        {!desk.rows.length && (
-          <div className="space-y-3 p-8 text-center">
-            <p>
-              Geen zaken gevonden{desk.query ? ` voor “${desk.query}”` : ""}.
-            </p>
-            <Button
-              variant="outline"
-              onClick={() =>
-                desk.updateParams(
-                  { q: null, street: null, page: null },
-                  undefined,
-                  true,
-                )
-              }
-            >
-              {u.clear}
-            </Button>
-          </div>
+        {!desk.rows.length && !desk.matchingCandidates.length && (
+          <DeskEmpty icon={<Search />} title={emptyNl.companies} description={desk.query || desk.street ? emptyNl.filtersNote : emptyNl.companiesNote}>
+            {(desk.query || desk.street) && <Button variant="outline" onClick={() => desk.updateParams({ q: null, street: null, page: null }, undefined, true)}>{emptyNl.reset}</Button>}
+          </DeskEmpty>
         )}
         <div className="flex items-center justify-between gap-4 border-t p-4 text-sm">
           <span role="status">
@@ -543,6 +476,7 @@ export function StreetView() {
           </div>
         </div>
       </div>
+      <CandidateList mode="approved" />
       <p className="text-sm text-muted-foreground">{u.noChangeNote}</p>
     </div>
   );
@@ -551,6 +485,7 @@ export function ReviewView() {
   const desk = useDesk();
   return (
     <div className="review-queue space-y-5">
+      <CandidateList mode="pending" />
       {desk.queue.length ? (
         <>
           <p className="text-sm text-muted-foreground">
@@ -565,12 +500,13 @@ export function ReviewView() {
                 className="business-item"
                 onClick={() => desk.openRecord(r, "review")}
               >
-                <BusinessAvatar name={r.naam} />
+                <BusinessAvatar name={r.naam} seed={r.id} />
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold">{r.naam}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {r.adres}
                   </p>
+                  <PrioritySummary detail={r.detail} proposalId={r.proposal?.id} />
                   <span className="field-chip mt-3">
                     <FieldIcon field={r.proposal!.field} />
                     {fieldLabel(r.proposal!.field)} controleren
@@ -581,14 +517,11 @@ export function ReviewView() {
             ))}
           </div>
         </>
-      ) : (
+      ) : desk.candidatesLoading || desk.candidatesError || desk.candidates.some(c => c.status === "pending") ? null : (
         <>
-          <div className="empty-state">
-            <ShieldCheck className="size-8" />
-            <h2 className="text-lg font-medium">{u.noPending}</h2>
-            <p className="text-sm text-muted-foreground">{u.noPendingNote}</p>
-            <Button onClick={() => desk.navigate("street")}>{u.search}</Button>
-          </div>
+          <DeskEmpty icon={<ShieldCheck />} title={u.noPending} description={u.noPendingNote} className="border bg-card">
+            <Button variant="outline" onClick={() => desk.navigate("street")}>{polish.allBusinesses}</Button>
+          </DeskEmpty>
         </>
       )}
     </div>
@@ -596,10 +529,17 @@ export function ReviewView() {
 }
 export function HistoryView() {
   const desk = useDesk();
-  const [exportOpen, setExportOpen] = useState(false),
-    [exportStreet, setExportStreet] = useState(""),
-    [downloading, setDownloading] = useState(false),
+  const [exportStreet, setExportStreet] = useState(""),
     [failure, setFailure] = useState("");
+  const [historyPage, setHistoryPage] = useState(0);
+  const exportMutation = useMutation({
+    mutationFn: async (street: string) => {
+      const params = new URLSearchParams({ municipality: "Schoten" });
+      if (street) params.set("street", street);
+      return (await api(`/api/export?${params}`)).blob();
+    },
+  });
+  const downloading = exportMutation.isPending;
   const approved = approvedChanges(desk.dossiers, exportStreet);
   const history = desk.dossiers
     .flatMap((detail) =>
@@ -613,12 +553,9 @@ export function HistoryView() {
     )
     .sort((a, b) => b.review.reviewedAt.localeCompare(a.review.reviewedAt));
   async function download() {
-    setDownloading(true);
     setFailure("");
     try {
-      const params = new URLSearchParams({ municipality: "Schoten" });
-      if (exportStreet) params.set("street", exportStreet);
-      const blob = await (await api(`/api/export?${params}`)).blob();
+      const blob = await exportMutation.mutateAsync(exportStreet);
       const url = URL.createObjectURL(blob),
         a = document.createElement("a");
       a.href = url;
@@ -627,21 +564,12 @@ export function HistoryView() {
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
       setFailure(e instanceof Error ? e.message : u.retry);
-    } finally {
-      setDownloading(false);
     }
   }
   return (
     <div className="space-y-5">
-      <Button
-        variant="outline"
-        onClick={() => setExportOpen(!exportOpen)}
-        aria-expanded={exportOpen}
-      >
-        <Download className="size-4" />
-        {u.export}
-      </Button>
-      {exportOpen && (
+      <CandidateList mode="history" />
+      <AnimatedDisclosure label={<><Download className="size-4" />{u.export}</>}>
         <section className="export-panel surface-panel max-w-2xl space-y-4 p-6">
           <div className="flex gap-3">
             <span className="section-icon">
@@ -677,15 +605,16 @@ export function HistoryView() {
             disabled={!approved.length || downloading}
             onClick={() => void download()}
           >
-            {downloading ? "Downloaden…" : u.download}
+            {downloading ? (
+              <LoadingStatus label={loadingText.downloading} />
+            ) : (
+              u.download
+            )}
           </Button>
         </section>
-      )}
+      </AnimatedDisclosure>
       {!history.length ? (
-        <div className="space-y-2">
-          <h2 className="text-lg">{u.historyEmpty}</h2>
-          <p>{u.historyNote}</p>
-        </div>
+        !desk.candidatesLoading && !desk.candidatesError && !desk.candidates.some(c => c.status !== "pending") && <DeskEmpty icon={<Clock3 />} title={u.historyEmpty} description={u.historyNote} className="border bg-card" />
       ) : (
         <div className="surface-panel data-table-panel">
           <PanelTitle
@@ -704,44 +633,34 @@ export function HistoryView() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {history.map(({ detail, review: r, proposal: p }) => (
+              {history.slice(historyPage * 15, historyPage * 15 + 15).map(({ detail, review: r, proposal: p }) => (
                 <TableRow key={r.reviewId}>
                   <TableCell className="max-w-96 whitespace-normal px-5 py-4">
-                    <p className="font-medium">{detail.establishment.name}</p>
-                    <details className="mt-2">
-                      <summary className="cursor-pointer text-sm underline underline-offset-4">
-                        {u.details}
-                      </summary>
-                      <div className="mt-4 space-y-3 text-sm">
-                        <p>
-                          {u.employee}:{" "}
-                          {r.reviewerId === desk.officerId
-                            ? desk.officer
-                            : (r.reviewerId ?? u.unknown)}
-                        </p>
-                        <p>
-                          {u.revision}: {r.revision}
-                        </p>
-                        <p>{r.note ?? "Geen toelichting"}</p>
-                        <p>Vestigingsnummer: {detail.establishment.id}</p>
-                        <Evidence
-                          items={evidenceGroups(detail, p?.evidenceIds ?? [])}
-                        />
-                      </div>
-                    </details>
+                    <Link
+                      href={`/straatbeeld?zaak=${encodeURIComponent(detail.establishment.id)}`}
+                      onClick={(event) => {
+                        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                        event.preventDefault();
+                        desk.openRecord(toRecord(detail));
+                      }}
+                      className="flex items-center gap-3 rounded-md font-medium underline-offset-4 hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+                      title={detail.establishment.name}
+                    >
+                      <BusinessAvatar name={detail.establishment.name} seed={detail.establishment.id} />
+                      <span className="truncate">{detail.establishment.name}</span>
+                    </Link>
                   </TableCell>
                   <TableCell className="max-w-64 whitespace-normal">
                     {fieldLabel(p?.field ?? "")}
-                    <div className="history-value">
-                      <FieldValue
-                        field={p?.field ?? ""}
-                        value={
-                          r.decision === "approve"
-                            ? r.effectiveValue
-                            : p?.proposedValue
-                        }
-                      />
-                    </div>
+                    {normalizedField(p?.field ?? "") === "openinghours" ? (
+                      <AnimatedDisclosure label={polish.hoursSummary} compact className="history-value">
+                        <FieldValue field={p?.field ?? ""} value={r.decision === "approve" ? r.effectiveValue : p?.proposedValue} />
+                      </AnimatedDisclosure>
+                    ) : (
+                      <p className="mt-1 break-words text-sm text-muted-foreground">
+                        {(r.decision === "approve" ? r.effectiveValue : p?.proposedValue) || t.notKnown}
+                      </p>
+                    )}
                   </TableCell>
                   <TableCell>
                     <StatusPill
@@ -757,6 +676,32 @@ export function HistoryView() {
               ))}
             </TableBody>
           </Table>
+          <div className="flex items-center justify-between border-t px-5 py-3 text-xs text-muted-foreground">
+            <span>
+              {history.length} {loadingText.decisions} · {historyPage + 1} /{" "}
+              {Math.ceil(history.length / 15)}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={u.previous}
+                disabled={!historyPage}
+                onClick={() => setHistoryPage((p) => p - 1)}
+              >
+                <ChevronLeft />
+              </Button>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={u.nextPage}
+                disabled={(historyPage + 1) * 15 >= history.length}
+                onClick={() => setHistoryPage((p) => p + 1)}
+              >
+                <ChevronRight />
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -764,11 +709,6 @@ export function HistoryView() {
 }
 export function SourcesView() {
   const { dossiers } = useDesk();
-  const sources = [
-    ...new Map(
-      dossiers.flatMap((d) => d.sources).map((s) => [s.id, s]),
-    ).values(),
-  ];
   return (
     <div className="sources-layout space-y-6">
       <section className="surface-panel">
@@ -826,29 +766,8 @@ export function SourcesView() {
           Modellicentie Gratis Hergebruik v1.0
         </a>
       </aside>
-      <Disclosure title={`Bronnenregister (${sources.length})`}>
-        {sources.map((s) => (
-          <div key={s.id} className="source-register-entry space-y-2">
-            <a
-              className="underline"
-              href={s.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {s.publisher}
-            </a>
-            <p>
-              {u.fetched} {sourceDate(s.retrievedAt)}
-            </p>
-            <p>
-              Waarnemingsdatum:{" "}
-              {s.observedAt ? sourceDate(s.observedAt) : u.unknown} ·
-              Registerpeildatum: {s.registrySnapshotDate ?? u.unknown}
-            </p>
-            <p className="break-all text-xs text-muted-foreground">{s.id}</p>
-          </div>
-        ))}
-      </Disclosure>
+      <SourcesRegistry dossiers={dossiers} />
+      <p className="text-xs text-muted-foreground">{polish.avatarNote}</p>
     </div>
   );
 }

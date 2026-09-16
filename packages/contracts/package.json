@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./fixtures": "./src/fixtures.ts",
-    "./demo": "./src/demo.ts"
+    "./demo": "./src/demo.ts",
+    "./candidates": "./src/candidates.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

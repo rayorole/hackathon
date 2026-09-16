@@ -13,11 +13,10 @@ import {
   MapPin,
 } from "lucide-react";
 import { deskRoutes, type DeskScreen } from "@/lib/desk-routes";
-import { deskNl as t, sidebarNl as s, nl } from "@/lib/nl";
+import { deskNl as t, sidebarNl as s, uxNl as u, nl } from "@/lib/nl";
 import { signOut } from "@/app/login/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -168,13 +167,14 @@ export function OfficerSidebar({
         ))}
       </SidebarContent>
       <SidebarFooter className="gap-3 p-3 group-data-[collapsible=icon]:p-2">
-        <Button
-          variant="ghost"
-          className="justify-start text-sm"
+        <SidebarMenuButton
+          tooltip={u.about}
+          aria-label={u.about}
           onClick={() => onNavigate("sources")}
         >
-          Over deze gegevens
-        </Button>
+          <Database className="size-4" />
+          <span className="group-data-[collapsible=icon]:hidden">{u.about}</span>
+        </SidebarMenuButton>
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>

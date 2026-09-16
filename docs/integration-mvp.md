@@ -33,3 +33,12 @@ All paid refresh calls must use the SAME existing ledger on Jochem's machine (`A
 `npm test`, `npm run lint -w @kbo/web`, `npm run typecheck -w @kbo/web`, `npm run build -w @kbo/web`.
 
 Browser acceptance: registration → email confirmation → administrator grants officer role → sign-in → real Paalstraat search → source and parent details → select proposal → edit/approve/reject → reload history → approved-only CSV → refresh → sign-out. Unauthorized API calls must return JSON 401/403, not a login HTML document.
+
+## Control workflow additions
+
+- Pending proposal queues are sorted by traceable evidence: conflict first, then missing/local support or observations older than 180 days, then unknown observation dates. Retrieval dates do not replace observation dates. Registry-only cases without proposals do not become urgent work.
+- The dossier compares values from the newest two retained snapshots of the same source URL, field and scope. A first fetch or absent extraction does not imply change, disappearance or closure. Comparisons appear only when values differ. Existing source retention is used; unchanged live fetches do not create synthetic snapshots.
+- `GET/POST /api/candidates` lists/reports a missing-business candidate; `POST /api/candidates/:id/review` performs an officer decision with `expectedRevision`. All routes use the existing officer guard. Reporter/reviewer identity and timestamps are server-owned. URLs must be HTTP(S), are stored as evidence links, and are never fetched from this flow.
+- Reports require name, municipal address, publisher, URL, observation and observation date. Candidates are stored separately in `straatbeeld_candidates`; their UUID is not a registry number. Pending reports appear under Wijzigingen, approved supplemental businesses under Zaken, and decisions under Historiek. Registry data, existing proposal exports and map coordinates are unchanged. Confirmation does not assert KBO registration or legal status.
+- The additive candidates migration is applied to the configured project. RLS is enabled; only service_role has select/insert/update, and browser roles have no table access. Optimistic concurrency prevents repeated decisions; request IDs and an active name/address fingerprint prevent repeated submissions.
+- Automated coverage includes priority, source comparison, candidate boundary validation, immutable evidence and stale decisions. Browser acceptance still requires the user's authenticated session.

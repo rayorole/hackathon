@@ -7,6 +7,10 @@ import {
   type ReactNode,
 } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { z } from "zod";
+import { candidateSchema } from "@straatbeeld/contracts/candidates";
+import { controlPriority } from "@/lib/control-insights";
 import type { Detail } from "@straatbeeld/contracts";
 import {
   api,
@@ -37,9 +41,25 @@ function useStateForDesk(officer: string, officerId: string) {
   const router = useRouter(),
     pathname = usePathname(),
     params = useSearchParams();
-  const [dossiers, setDossiers] = useState<Detail[]>([]),
-    [loading, setLoading] = useState(true),
-    [error, setError] = useState("");
+  const workspace = useQuery({
+    queryKey: ["workspace", officerId],
+    queryFn: ({ signal }) => loadWorkspace(signal),
+  });
+  const candidateQuery = useQuery({
+    queryKey: ["candidates", officerId],
+    queryFn: async () => z.object({ items: z.array(candidateSchema) }).parse(await (await api("/api/candidates")).json()).items,
+  });
+  const candidates = candidateQuery.data ?? [];
+  const dossiers: Detail[] = workspace.data ?? [];
+  const loading = workspace.isPending;
+  const [actionError, setError] = useState("");
+  const error = actionError || workspace.error?.message || "";
+  const refreshMutation = useMutation({
+    mutationFn: async (id: string) =>
+      (
+        await api(`/api/establishments/${id}/refresh`, { method: "POST" })
+      ).json(),
+  });
   const [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, ReviewDraft>>({});
@@ -60,30 +80,15 @@ function useStateForDesk(officer: string, officerId: string) {
   const rows = records.filter(
     (r) => matchesBusiness(r.detail, query) && (!street || r.street === street),
   );
+  const matchingCandidates = candidates.filter(c => c.status === "approved" && (!street || street === c.address.street) && `${c.name} ${c.address.street} ${c.address.houseNumber}`.toLocaleLowerCase("nl-BE").includes(query.toLocaleLowerCase("nl-BE")));
   const queue = dossiers.flatMap((d) =>
     d.establishment.proposals
       .filter((p) => p.reviewState === "pending")
       .map((p) => toRecord(d, p.id)),
-  );
-  const streets = [...new Set(records.map((r) => r.street))].sort((a, b) =>
+  ).sort((a, b) => controlPriority(b.detail, b.proposal?.id, new Date().toISOString()).rank - controlPriority(a.detail, a.proposal?.id, new Date().toISOString()).rank);
+  const streets = [...new Set([...records.map((r) => r.street), ...candidates.filter(c => c.status === "approved").map(c => c.address.street)])].sort((a, b) =>
     a.localeCompare(b, "nl"),
   );
-  useEffect(() => {
-    let active = true;
-    loadWorkspace()
-      .then((data) => {
-        if (active) setDossiers(data);
-      })
-      .catch((e) => {
-        if (active) setError(e.message);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
   useEffect(() => {
     if (!dirty) return;
     const unload = (e: BeforeUnloadEvent) => {
@@ -93,10 +98,9 @@ function useStateForDesk(officer: string, officerId: string) {
     return () => window.removeEventListener("beforeunload", unload);
   }, [dirty]);
   async function reload() {
-    const data = await loadWorkspace();
-    setDossiers(data);
+    const result = await workspace.refetch({ throwOnError: true });
     setError("");
-    return data;
+    return result.data!;
   }
   function guard(action: () => void) {
     if (busy) return;
@@ -159,9 +163,7 @@ function useStateForDesk(officer: string, officerId: string) {
     setBusy(true);
     setError("");
     try {
-      const result = await (
-        await api(`/api/establishments/${id}/refresh`, { method: "POST" })
-      ).json();
+      const result = await refreshMutation.mutateAsync(id);
       await reload();
       setNotice(result.messageNl);
     } catch (e) {
@@ -184,6 +186,7 @@ function useStateForDesk(officer: string, officerId: string) {
     street,
     selected,
     loading,
+    fetching: workspace.isFetching,
     error,
     notice,
     busy,
@@ -192,6 +195,11 @@ function useStateForDesk(officer: string, officerId: string) {
     setNotice,
     setBusy,
     setDraft,
+    candidates,
+    matchingCandidates,
+    candidatesLoading: candidateQuery.isPending,
+    candidatesError: candidateQuery.error?.message ?? "",
+    reloadCandidates: () => candidateQuery.refetch({ throwOnError: true }),
     reload,
     navigate,
     openRecord,

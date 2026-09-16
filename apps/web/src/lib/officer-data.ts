@@ -8,6 +8,7 @@ const fieldNl: Record<string, string> = {
   address: "Adres",
   opening_hours: "Openingsuren",
   openingHours: "Openingsuren",
+  openinghours: "Openingsuren",
   localService: "Lokale dienstverlening",
 };
 export const fieldLabel = (field: string) => fieldNl[field] ?? field;
@@ -98,7 +99,7 @@ export async function api(path: string, init?: RequestInit) {
   }
   return r;
 }
-export async function loadWorkspace() {
-  const data = await (await api("/api/workspace")).json();
+export async function loadWorkspace(signal?: AbortSignal) {
+  const data = await (await api("/api/workspace", { signal })).json();
   return (data.details as unknown[]).map((d) => detailSchema.parse(d));
 }
