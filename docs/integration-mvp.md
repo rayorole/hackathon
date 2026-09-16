@@ -12,6 +12,15 @@ The already-applied `straatbeeld_cases` migration is included for reproducibilit
 
 `/register` creates a Supabase account. Email confirmation and a server-managed officer role are required before dossiers become accessible. Unapproved accounts go to `/access-pending`. Configure the actual app URL and `/auth/callback` in Supabase's Auth redirect allowlist. Keep production URL and local test URLs explicit. A project administrator grants officer access to the intended confirmed user; signup cannot self-grant access.
 
+## Production deployment
+
+- Vercel project: `rayoroles-projects/straatbeeld`, production URL `https://straatbeeld.vercel.app`. GitHub `rayorole/hackathon`, production branch `main`, Next.js root directory `apps/web`, Node.js 24, with workspace files outside the root included.
+- Production environment uses the existing Supabase project: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (Vercel Secret), and `DATA_BACKEND=supabase`. Never commit environment files. `.vercelignore` excludes local dependencies, caches, credentials and scratch data from CLI uploads.
+- UI and canonical API routes deploy together. The database and authentication remain hosted on Supabase; the inactive `apps/api` scaffold needs no separate deployment.
+- Required Auth configuration: site URL `https://straatbeeld.vercel.app` and allowed redirect `https://straatbeeld.vercel.app/auth/callback`, preserving existing local URLs. This must be verified in the Supabase dashboard before relying on production registration emails.
+- Paid AI refresh is not configured on Vercel: no OpenAI key or local budget ledger is uploaded. Existing evidence, decisions, exports and missing-business reports use the live database. Enabling paid refresh requires the shared atomic budget described below.
+- Verified after deployment: health endpoint reports Supabase, login and illustration return 200, protected pages redirect to login, and anonymous workspace/candidate API requests return JSON 401. Authenticated workflows require an officer session.
+
 ## Contract and pages
 
 - `GET /api/establishments`: canonical summaries and coverage; municipality/street filters.

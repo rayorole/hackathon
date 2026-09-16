@@ -1,0 +1,13 @@
+**/node_modules/**
+**/.next/**
+**/.turbo/**
+**/dist/**
+**/*.tsbuildinfo
+**/.env*
+.git/**
+.agents/**
+.local/**
+data/raw/**
+data/derived/**
+evidence/**
+supabase/.temp/**

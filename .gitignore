@@ -16,3 +16,4 @@ data/derived/*
 .local/
 supabase/.temp/
 evidence/
+.vercel
