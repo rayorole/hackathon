@@ -1,4 +1,5 @@
 "use client";
+import { MunicipalMonitoring } from "./municipal-monitoring";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   Search,
@@ -332,6 +333,7 @@ export function OverviewView() {
           <ArrowRight className="size-4" />
         </button>
       </section>
+      <MunicipalMonitoring />
       {count > 0 && (
         <section className="start-queue surface-panel">
           <PanelTitle

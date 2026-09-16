@@ -18,7 +18,7 @@ export function toRecord(detail: Detail, proposalId?: string) {
   const e = detail.establishment,
     p =
       e.proposals.find((p) => p.id === proposalId) ??
-      e.proposals.find((p) => p.reviewState === "pending") ??
+      e.proposals.find((p) => p.reviewState === "pending" && !p.supersededBy) ??
       e.proposals.at(-1);
 
   const evidenceViews = detail.evidence.map((v) => {

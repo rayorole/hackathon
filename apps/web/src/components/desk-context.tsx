@@ -62,7 +62,7 @@ function useStateForDesk(officer: string, officerId: string) {
   );
   const queue = dossiers.flatMap((d) =>
     d.establishment.proposals
-      .filter((p) => p.reviewState === "pending")
+      .filter((p) => p.reviewState === "pending" && !p.supersededBy)
       .map((p) => toRecord(d, p.id)),
   );
   const streets = [...new Set(records.map((r) => r.street))].sort((a, b) =>
@@ -84,6 +84,21 @@ function useStateForDesk(officer: string, officerId: string) {
       active = false;
     };
   }, []);
+  useEffect(() => {
+    if (dirty || busy || selected) return;
+    let active = true;
+    const timer = setInterval(() => {
+      void loadWorkspace()
+        .then((data) => {
+          if (active) setDossiers(data);
+        })
+        .catch(() => {});
+    }, 15000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, [dirty, busy, selected]);
   useEffect(() => {
     if (!dirty) return;
     const unload = (e: BeforeUnloadEvent) => {

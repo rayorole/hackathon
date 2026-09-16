@@ -144,39 +144,27 @@ export async function refresh(id: string) {
   if (error)
     throw new DataError("DATABASE_ERROR", "Database niet beschikbaar.", 503);
   if (!data) throw new DataError("NOT_FOUND", "Vestiging niet gevonden.", 404);
-  const { research } = await import("../../../../scripts/lib/research");
-  let result;
-  try {
-    result = await research(detailSchema.parse(data.detail));
-  } catch {
-    throw new DataError(
-      "REFRESH_FAILED",
-      "Broncontrole niet beschikbaar. Controleer bronbereikbaarheid en AI-budget; bestaand bewijs is behouden.",
-      503,
-    );
-  }
-  if (!result.refreshed) return result;
-  const saved = await db
-    .from("straatbeeld_cases")
+  const queued = await db
+    .from("straatbeeld_research_queue")
     .update({
-      detail: result.detail,
-      version: data.version + 1,
-      updated_at: new Date().toISOString(),
+      next_due_at: new Date().toISOString(),
+      priority: 100,
+      status: "queued",
     })
-    .eq("id", id)
-    .eq("version", data.version)
-    .select("id");
-  if (saved.error)
+    .eq("establishment_id", id)
+    .neq("status", "running")
+    .select("establishment_id");
+  if (queued.error)
     throw new DataError(
-      "DATABASE_ERROR",
-      "Broncontrole kon niet worden opgeslagen.",
+      "QUEUE_UNAVAILABLE",
+      "Onderzoekswachtrij niet beschikbaar.",
       503,
     );
-  if (!saved.data?.length)
-    throw new DataError(
-      "REVISION_CONFLICT",
-      "Een beoordeling wijzigde deze vestiging tijdens broncontrole. Laad opnieuw; er is niets overschreven.",
-      409,
-    );
-  return result;
+  return {
+    detail: detailSchema.parse(data.detail),
+    refreshed: false,
+    messageNl: queued.data?.length
+      ? "Hercontrole ingepland in de gemeentelijke wachtrij. De worker verwerkt deze met voorrang."
+      : "Onderzoek loopt al of de zaak is nog niet opgenomen in de wachtrij.",
+  };
 }

@@ -15,3 +15,5 @@ data/derived/*
 
 .local/
 evidence/
+
+supabase/.temp/

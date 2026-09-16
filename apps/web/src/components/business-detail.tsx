@@ -146,7 +146,7 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
   const e = detail.establishment;
   const proposal =
     e.proposals.find((p) => p.id === desk.params.get("voorstel")) ??
-    e.proposals.find((p) => p.reviewState === "pending") ??
+    e.proposals.find((p) => p.reviewState === "pending" && !p.supersededBy) ??
     e.proposals.at(-1);
   const approved = approvedChanges([detail]);
   const contact = approved.filter((item) =>
@@ -196,16 +196,18 @@ export function BusinessDetail({ detail }: { detail: Detail }) {
                   )
                 }
               >
-                {e.proposals.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {fieldLabel(p.field)} ·{" "}
-                    {p.reviewState === "pending"
-                      ? u.pendingStatus
-                      : p.reviewState === "approved"
-                        ? u.approved
-                        : u.rejected}
-                  </option>
-                ))}
+                {e.proposals
+                  .filter((p) => !p.supersededBy)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {fieldLabel(p.field)} ·{" "}
+                      {p.reviewState === "pending"
+                        ? u.pendingStatus
+                        : p.reviewState === "approved"
+                          ? u.approved
+                          : u.rejected}
+                    </option>
+                  ))}
               </select>
             </div>
           )}

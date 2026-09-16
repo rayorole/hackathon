@@ -464,8 +464,8 @@ export const uxNl = {
   noContact: "Er zijn nog geen goedgekeurde contactgegevens.",
   foundContact: "Contactgegevens gevonden in bronnen",
   sourceOnly: "Brongegeven — niet goedgekeurd",
-  refresh: "Bronnen opnieuw controleren",
-  refreshing: "Bronnen controleren…",
+  refresh: "Hercontrole aanvragen",
+  refreshing: "Hercontrole inplannen…",
   export: "Goedgekeurde wijzigingen exporteren",
   exportNote:
     "Alleen de laatste goedgekeurde wijzigingen staan in dit bestand. Het officiële register verandert niet.",

@@ -21,7 +21,8 @@
     "ai:init-budget": "node --env-file=apps/web/.env.local --import tsx scripts/init-ai-budget.ts",
     "ai:research": "node --env-file=apps/web/.env.local --import tsx scripts/research-case.ts",
     "start": "npm run start -w @kbo/web",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "check": "npm run typecheck && npm run lint && npm test",
+    "monitor": "node --env-file=apps/web/.env.local --import tsx scripts/monitor-municipality.ts"
   },
   "devDependencies": {
     "turbo": "^2.5.8",

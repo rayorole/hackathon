@@ -1,7 +1,11 @@
 import { createHash } from "node:crypto";
 import { load } from "cheerio";
 import { z } from "zod";
-import type { Detail } from "../../packages/contracts/src/index";
+import {
+  renewPendingBaselines,
+  type Detail,
+} from "../../packages/contracts/src/index";
+import { publicHtml, type Target } from "./discovery";
 import { budgeted } from "./ai-budget";
 import {
   selectionSchema,
@@ -11,7 +15,7 @@ import {
   normalizedText,
   type SourceDocument,
 } from "./source-analysis";
-const targets: Record<string, { url: string; publisher: string }[]> = {
+export const targets: Record<string, { url: string; publisher: string }[]> = {
   "2296242396": [
     {
       url: "https://www.amplifon.com/nl-be/hoorcentrum/hoorapparaten-antwerpen/amplifon-schoten-s583",
@@ -33,29 +37,7 @@ async function document(
   target: { url: string; publisher: string },
   detail: Detail,
 ): Promise<SourceDocument> {
-  const r = await fetch(target.url, {
-    redirect: "error",
-    signal: AbortSignal.timeout(15000),
-    headers: {
-      "user-agent": "StraatbeeldHackathon/0.1 (municipal evidence prototype)",
-    },
-  });
-  if (!r.ok || !r.headers.get("content-type")?.includes("text/html"))
-    throw new Error("Source unavailable");
-  const reader = r.body!.getReader();
-  let size = 0;
-  const chunks: Uint8Array[] = [];
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    size += value.length;
-    if (size > 1500000) {
-      await reader.cancel();
-      throw new Error("Source too large");
-    }
-    chunks.push(value);
-  }
-  const $ = load(Buffer.concat(chunks).toString("utf8"));
+  const $ = load(await publicHtml(target.url));
   $("script,style,noscript,nav,header,footer").remove();
   $("br").replaceWith(" ");
   $("p,li,div,tr,td,th,h1,h2,h3,h4,span,a").append(" ");
@@ -89,9 +71,11 @@ async function document(
 }
 export async function research(
   detail: Detail,
+  discovered?: Target[],
+  beforeAnalysis?: () => Promise<void>,
 ): Promise<{ detail: Detail; refreshed: boolean; messageNl: string }> {
-  const configured = targets[detail.establishment.id];
-  if (!configured)
+  const configured = discovered ?? targets[detail.establishment.id];
+  if (!configured?.length)
     return {
       detail,
       refreshed: false,
@@ -110,15 +94,20 @@ export async function research(
       "Bronnen konden niet worden opgehaald of lokaal gekoppeld. Bestaand bewijs is behouden.",
     );
   if (
-    !failed &&
     documents.every((d) => detail.sources.some((s) => s.id === d.source.id))
-  )
+  ) {
+    const rebased = renewPendingBaselines(detail);
     return {
-      detail,
-      refreshed: false,
+      detail: rebased,
+      refreshed: JSON.stringify(rebased) !== JSON.stringify(detail),
       messageNl:
-        "Bronnen gecontroleerd; inhoud ongewijzigd. Geen nieuwe AI-aanvraag.",
+        "Bereikbare bronnen gecontroleerd; inhoud ongewijzigd. Geen nieuwe AI-aanvraag." +
+        (failed
+          ? " Een bron is niet bereikbaar; die controle blijft onvolledig."
+          : ""),
     };
+  }
+  await beforeAnalysis?.();
   const key = process.env.OPENAI_API_KEY,
     budgetFile = process.env.AI_BUDGET_FILE;
   if (!key || !budgetFile)
@@ -199,8 +188,8 @@ export async function research(
   });
   if (!extracted.claims.length)
     return {
-      detail,
-      refreshed: false,
+      detail: mergeAnalysis(detail, documents, extracted),
+      refreshed: true,
       messageNl:
         "Bronnen opgehaald, maar geen letterlijk verifieerbare AI-fragmenten gevonden. Bestaand bewijs is behouden.",
     };

@@ -37,6 +37,8 @@ export const proposalSchema = z.object({
   id: z.string(),
   establishmentId: z.string(),
   field: z.string(),
+  baselineReviewId: z.string().nullable().optional(),
+  supersededBy: z.string().optional(),
   before: z.string().nullable(),
   proposedValue: z.string().nullable(),
   reasonNl: z.string(),
@@ -143,4 +145,85 @@ export function matches(e: Establishment, f: Filters = {}) {
     (!f.municipality || e.address.municipality === f.municipality) &&
     (!f.street || e.address.street === f.street)
   );
+}
+
+export const monitoringSchema = z.object({
+  municipality: z.string(),
+  paused: z.boolean(),
+  online: z.boolean(),
+  heartbeatAt: z.string().nullable(),
+  lastPlannedAt: z.string().nullable(),
+  directoryCheckedAt: z.string().nullable(),
+  directoryCandidates: z.number(),
+  researchStarted: z.number(),
+  researchLimit: z.number(),
+  total: z.number(),
+  queued: z.number(),
+  running: z.number(),
+  checked: z.number(),
+  noSource: z.number(),
+  failed: z.number(),
+  blocked: z.number(),
+  nextDueAt: z.string().nullable(),
+  jobs: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      status: z.string(),
+      message: z.string().nullable(),
+      checkedAt: z.string().nullable(),
+    }),
+  ),
+});
+export type Monitoring = z.infer<typeof monitoringSchema>;
+
+/** Latest still-approved decision per field. Rejecting a new proposal preserves earlier approval. */
+export function acceptedFields(detail: Detail) {
+  const fields = new Map<
+    string,
+    { proposal: Detail["establishment"]["proposals"][number]; review: Review }
+  >();
+  for (const review of detail.reviews) {
+    const proposal = detail.establishment.proposals.find(
+      (p) => p.id === review.proposalId,
+    );
+    if (
+      !proposal ||
+      proposal.reviewState !== "approved" ||
+      review.decision !== "approve" ||
+      detail.reviews.findLast((r) => r.proposalId === proposal.id) !== review
+    )
+      continue;
+    fields.set(proposal.field, { proposal, review });
+  }
+  return [...fields.values()];
+}
+
+/** Rebase an unreviewed suggestion after a concurrent officer decision, without changing its evidence. */
+export function renewPendingBaselines(detail: Detail): Detail {
+  const next = structuredClone(detail);
+  for (const p of [...next.establishment.proposals]) {
+    if (
+      p.reviewState !== "pending" ||
+      p.supersededBy ||
+      p.baselineReviewId === undefined
+    )
+      continue;
+    const current = acceptedFields(next).find(
+      (x) => x.proposal.field === p.field,
+    );
+    const baseline = current?.review.reviewId ?? null;
+    if (p.baselineReviewId === baseline) continue;
+    const id = p.id + ":baseline:" + (baseline ?? "none");
+    if (!next.establishment.proposals.some((x) => x.id === id))
+      next.establishment.proposals.push({
+        ...p,
+        id,
+        baselineReviewId: baseline,
+        before: current?.review.effectiveValue ?? null,
+        revision: 0,
+      });
+    p.supersededBy = id;
+  }
+  return next;
 }

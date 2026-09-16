@@ -17,7 +17,7 @@ The already-applied `straatbeeld_cases` migration is included for reproducibilit
 - `GET /api/establishments`: canonical summaries and coverage; municipality/street filters.
 - `GET /api/establishments/:id`: canonical full dossier, evidence, sources, proposals and reviews.
 - `POST /api/reviews`: proposalId, expectedRevision, decision (`approve`/`reject`), optional correctedValue on approval, optional note. Server records reviewerId. Concurrent changes return 409; reload before another decision.
-- `POST /api/establishments/:id/refresh`: bounded source recheck; returns full detail and Dutch status. Only explicitly configured targets currently supported.
+- `POST /api/establishments/:id/refresh`: queues a source recheck for the shared municipal worker; returns full detail and Dutch status. See `docs/municipal-monitoring.md`.
 - `GET /api/export`: current approved values only, with source URLs; no direct register publication.
 - `GET /api/workspace`: authenticated batch of canonical dossiers for the MVP views (current sample 543 real establishments). This intentionally favors one bounded request over hundreds of detail calls; paginate for a larger dataset.
 - `GET /api/locations`: supplied sample coordinates with basic geographic range checks. Coordinates are not field-verified. The map shows the selected address and lets the officer open its dossier; it is not a business-activity heatmap.
@@ -33,3 +33,7 @@ All paid refresh calls must use the SAME existing ledger on Jochem's machine (`A
 `npm test`, `npm run lint -w @kbo/web`, `npm run typecheck -w @kbo/web`, `npm run build -w @kbo/web`.
 
 Browser acceptance: registration → email confirmation → administrator grants officer role → sign-in → real Paalstraat search → source and parent details → select proposal → edit/approve/reject → reload history → approved-only CSV → refresh → sign-out. Unauthorized API calls must return JSON 401/403, not a login HTML document.
+
+## Municipal monitoring branch
+
+`codex/municipal-monitoring` extends this integration with periodic municipality-wide enrollment, research status and versioned proposals. `docs/municipal-monitoring.md` is the current worker/API handoff. Streets remain search filters.
