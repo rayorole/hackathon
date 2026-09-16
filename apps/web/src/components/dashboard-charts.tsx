@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from "recharts";
-import { type DemoRecord } from "@/lib/officer-demo";
+import { type RecordView as DemoRecord } from "@/lib/officer-data";
 import { chartNl as t } from "@/lib/nl";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,10 +33,10 @@ export function DashboardCharts({ records, queue, onOpenRecord, onOpenStreet }: 
   }));
   const selectedRecords = level ? records.filter((record) => record.zekerheid === level) : [];
   const visible = scope === "open" ? queue : records;
-  const streetNames = [...new Set(records.map((record) => record.adres.replace(/ \d+$/, "")))];
+  const streetNames = [...new Set(records.map((record) => record.street))];
   const streets = streetNames.map((name) => ({
-    name, count: visible.filter((record) => record.adres.replace(/ \d+$/, "") === name).length,
-  })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "nl"));
+    name, count: visible.filter((record) => record.street === name).length,
+  })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, "nl")).slice(0,12);
   const chooseLevel = (name: string) => {
     const next = levels.find((value) => value === name);
     if (next) setLevel((current) => current === next ? null : next);
@@ -69,7 +69,7 @@ export function DashboardCharts({ records, queue, onOpenRecord, onOpenStreet }: 
               {confidence.map((entry) => (
                 <Button key={entry.name} variant={level === entry.name ? "secondary" : "ghost"} aria-pressed={level === entry.name} onClick={() => chooseLevel(entry.name)} className="h-10 w-full justify-start gap-2 px-3">
                   <span className="size-2 rounded-full" style={{ background: entry.fill }} />
-                  <span className="text-xs">{entry.name}</span>
+                  <span className="text-xs">{{Hoog:"Onderbouwd",Middel:"Te controleren",Laag:"Onvoldoende bewijs"}[entry.name]}</span>
                   <span className="ml-auto text-xs tabular-nums">{entry.count}</span>
                   <span className="w-10 text-right text-[11px] font-normal text-muted-foreground tabular-nums">{records.length ? Math.round(entry.count / records.length * 100) : 0}%</span>
                 </Button>
@@ -80,7 +80,7 @@ export function DashboardCharts({ records, queue, onOpenRecord, onOpenStreet }: 
           {level && <div className="mt-4 border-t pt-3">
             <div className="mb-2 flex items-center justify-between"><p className="text-xs font-medium" aria-live="polite">{level} · {selectedRecords.length} {t.records}</p><Button variant="ghost" size="xs" onClick={() => setLevel(null)}>{t.reset}</Button></div>
             <div className="max-h-56 overflow-y-auto">
-              {selectedRecords.length ? selectedRecords.map((record) => <Button key={record.adres} variant="ghost" onClick={() => onOpenRecord(record)} className="h-auto w-full justify-start gap-3 py-2 text-left"><span className="min-w-0 flex-1"><span className="block truncate text-xs">{record.naam}</span><span className="block text-[11px] font-normal text-muted-foreground">{record.adres}</span></span><ArrowUpRight className="size-3.5" /></Button>) : <p className="text-xs text-muted-foreground">{t.empty}</p>}
+              {selectedRecords.length ? selectedRecords.map((record) => <Button key={record.proposal?.id??record.id} variant="ghost" onClick={() => onOpenRecord(record)} className="h-auto w-full justify-start gap-3 py-2 text-left"><span className="min-w-0 flex-1"><span className="block truncate text-xs">{record.naam}</span><span className="block text-[11px] font-normal text-muted-foreground">{record.adres}</span></span><ArrowUpRight className="size-3.5" /></Button>) : <p className="text-xs text-muted-foreground">{t.empty}</p>}
             </div>
           </div>}
         </CardContent>

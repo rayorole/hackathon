@@ -1,0 +1,30 @@
+> **Authoritative integration direction:** Jochem’s `packages/contracts` data model and documented API are the source of truth. Ray retains his frontend/page designs on `main` and adapts its API calls and view models to this contract. Preserve authentication without changing payload shapes. Do not merge the entire scaffold. See `docs/integration-mvp.md`.
+
+# Shared API contract — v1.0.0
+
+Executable source: `packages/contracts/src/index.ts` (Zod schemas + types). No independently invented frontend types. Browser boundary: `apps/web/src/lib/officer-data.ts`. IDs are strings; timestamps ISO8601; unknown values null. API responses have no extra data wrapper.
+
+| Method                                                         | Response                                                      |
+| -------------------------------------------------------------- | ------------------------------------------------------------- |
+| GET /api/establishments?municipality=Schoten&street=Paalstraat | `{items: Establishment[], coverage: Coverage}`                |
+| GET /api/establishments/:id                                    | `Detail` containing establishment, sources, evidence, reviews |
+| POST /api/reviews                                              | `Review`, status 201                                          |
+| POST /api/establishments/:id/refresh                           | `{detail, refreshed, messageNl}`                              |
+| GET /api/export?municipality=Schoten&street=Paalstraat         | UTF-8 CSV, approved changes only                              |
+| GET /api/health                                                | configuration/status, no credentials                          |
+
+Review request: `{proposalId, expectedRevision, decision: 'approve'|'reject', correctedValue?: string|null, note?: string}`. Send correctedValue only on approve. Server generates IDs/timestamps and rejects unexpected input fields. Response revision increments; old revision gets 409. Approve/reject can supersede an earlier decision at the next revision, preserving history. A rejection's effectiveValue is null; source fact remains unchanged.
+
+Errors: `{error:{code,message}}`. Expected 400 invalid request; 404 missing record; 409 revision conflict; 422 missing evidence; 501 write backend not connected; 503 DB error. API routes require a verified Supabase user with server-managed app_metadata.role=officer; missing authentication returns 401 and missing role returns 403. Review responses include server-authored reviewerId. Detail and list payloads are runtime validated by the client.
+
+Current API read limit 1000 is explicit in coverage, no municipality completeness claim. Supabase list filtering uses indexed municipality/street; no pagination yet. `refresh` performs source retrieval/grounded AI extraction for the configured demo candidates; unknown targets and unchanged content return refreshed:false. See docs/integration-mvp.md. Fixtures are test-only; the connected UI reads real dossiers from Supabase.
+
+## Ownership/change protocol
+
+Jochem coordinates edits to contracts/client. Discuss a shape change before committing; update schemas, fixtures, adapters and tests in the same commit. Ray pulls that commit before consuming new fields. Adding UI-only component props does not require a shared contract change.
+
+## Storage mapping
+
+`straatbeeld_cases`: id=text registry/demo establishment identifier; municipality/street=indexable filters; version=optimistic concurrency integer; detail=complete typed JSON payload; updated_at=storage modification time (not evidence retrieval time). Review history lives in detail.reviews so the decision and audit append commit atomically. Registry fact fields remain unchanged by review logic.
+
+Authenticated MVP batch helpers: `GET /api/workspace` returns `{details: Detail[]}` for Schoten. `GET /api/locations` returns supplied coordinates keyed by registry ID, filtered to a plausible Schoten bounding range. These additive helpers do not replace the canonical endpoints above.

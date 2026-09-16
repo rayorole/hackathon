@@ -11,5 +11,5 @@ if (!url) {
 }
 
 // Nothing here knows or cares that it is Supabase — any Postgres works (AGENTS.md §6).
-export const client = postgres(url, { prepare: false, connect_timeout: 10 });
+export const client = postgres(url, { prepare: false });
 export const db = drizzle(client, { schema });

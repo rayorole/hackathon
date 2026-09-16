@@ -1,4 +1,4 @@
-﻿import type { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -13,9 +13,14 @@ export default async function DeskLayout({
     data: { user },
   } = await (await createClient()).auth.getUser();
   if (!user) redirect("/login");
+  if (user.app_metadata?.role !== "officer") redirect("/access-pending");
   const defaultOpen = (await cookies()).get("sidebar_state")?.value !== "false";
   return (
-    <OfficerDesk officer={user.email ?? user.id} defaultOpen={defaultOpen}>
+    <OfficerDesk
+      officer={user.email ?? user.id}
+      officerId={user.id}
+      defaultOpen={defaultOpen}
+    >
       {children}
     </OfficerDesk>
   );

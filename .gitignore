@@ -12,3 +12,6 @@ data/derived/*
 .env.*
 !.env.example
 *.tsbuildinfo
+
+.local/
+evidence/

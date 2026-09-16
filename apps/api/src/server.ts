@@ -6,8 +6,7 @@ import { z } from "zod";
 import { eq, gt, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import { db } from "./db/client.js";
-import { acceptedCorrections, audit, evidence, records, scores } from "./db/schema.js";
-import { researchRoutes } from './routes/research.js';
+import { audit, evidence, records, scores } from "./db/schema.js";
 
 /**
  * REST surface for the Evidence Desk.
@@ -17,15 +16,9 @@ import { researchRoutes } from './routes/research.js';
  * criterion 3, not architecture for its own sake (AGENTS.md Â§6).
  */
 const app = new Hono<AuthEnv>();
-app.onError((error, c) => {
-  // Do not log request headers, database URLs or provider error payloads.
-  console.error('API request failed', error.name);
-  return c.json({ error: 'De dienst is tijdelijk niet beschikbaar. Probeer opnieuw.' }, 503);
-});
 
 app.use("/*", cors({ origin: process.env.WEB_ORIGIN ?? "http://localhost:3000", allowHeaders: ["Authorization", "Content-Type"] }));
 app.use("/api/*", requireOfficer);
-app.route('/api/record', researchRoutes);
 
 app.get("/health", (c) => c.json({ ok: true }));
 
@@ -76,8 +69,7 @@ app.get("/api/record/:nr", async (c) => {
       .where(eq(records.ondernemingsnr, row.zetelOndernemingsnr));
   }
 
-  const correcties = await db.select().from(acceptedCorrections).where(eq(acceptedCorrections.ondernemingsnr, nr));
-  return c.json({ record: row, zetel, bewijs, score: score ?? null, beslissingen, correcties });
+  return c.json({ record: row, zetel, bewijs, score: score ?? null, beslissingen });
 });
 
 const BeoordelingBody = z.object({

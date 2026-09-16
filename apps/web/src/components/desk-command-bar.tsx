@@ -7,10 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Kbd } from "@/components/ui/kbd";
 import { deskRoutes, type DeskScreen } from "@/lib/desk-routes";
-import { demoRecords, type DemoRecord } from "@/lib/officer-demo";
+import { type RecordView as DemoRecord } from "@/lib/officer-data";
 import { commandNl as c, deskNl as t } from "@/lib/nl";
 
-export function DeskCommandBar({ onNavigate, onSearch, onOpenRecord }: {
+export function DeskCommandBar({ records, onNavigate, onSearch, onOpenRecord }: {
+  records: DemoRecord[];
   onNavigate: (screen: DeskScreen) => void;
   onSearch: (query: string) => void;
   onOpenRecord: (record: DemoRecord) => void;
@@ -35,7 +36,7 @@ export function DeskCommandBar({ onNavigate, onSearch, onOpenRecord }: {
     setOpen(false);
     action();
   };
-  const streets = [...new Set(demoRecords.map((record) => record.adres.replace(/ \d+$/, "")))];
+  const streets = [...new Set(records.map((record) => record.street))];
 
   return (
     <>
@@ -75,7 +76,7 @@ export function DeskCommandBar({ onNavigate, onSearch, onOpenRecord }: {
               </CommandGroup>
               <CommandSeparator />
               <CommandGroup heading={c.records}>
-                {demoRecords.map((record) => <CommandItem key={record.adres} value={`${record.naam} ${record.adres} ${record.ondNr} ${record.vestNr}`} onSelect={() => run(() => onOpenRecord(record))}>
+                {records.map((record) => <CommandItem key={record.proposal?.id??record.id} value={`${record.naam} ${record.adres} ${record.ondNr} ${record.vestNr}`} onSelect={() => run(() => onOpenRecord(record))}>
                   <Building2 className="text-muted-foreground" />
                   <span className="min-w-0"><span className="block truncate">{record.naam}</span><span className="block truncate text-xs font-normal text-muted-foreground">{record.adres} · {record.soort}</span></span>
                 </CommandItem>)}

@@ -1,3 +1,4 @@
+import type {Detail} from "@straatbeeld/contracts";
 import { z } from "zod";
 import { BusinessRecord, Evidence, Zekerheid, realDate } from "@kbo/core";
 import municipality from "../../../../config/municipality.json";
@@ -22,10 +23,6 @@ export const mapDetailSchema = z.object({
   zetel: BusinessRecord.nullable().optional(),
   bewijs: z.array(Evidence),
   score: mapScoreSchema.nullable(),
-  correcties: z.array(z.object({
-    id: z.string(), runId: z.string(), ondernemingsnr: z.string(),
-    field: z.string(), value: z.string(), medewerker: z.string(), createdAt: z.string(),
-  })).default([]),
 });
 export type MapEntry = z.infer<typeof mapEntrySchema>;
 export type MapDetail = z.infer<typeof mapDetailSchema>;
@@ -71,4 +68,10 @@ export function displayObservationDate(value: string | null) {
   const date = realDate(value);
   if (!date) return "—";
   return new Date(`${date}T12:00:00Z`).toLocaleDateString("nl-BE");
+}
+
+// Presentation adapter only: the canonical API remains Detail, not this map view shape.
+export function toMapEntry(detail:Detail,locations:Record<string,[number,number]>):MapEntry {
+ const e=detail.establishment,point=locations[e.id];
+ return {record:{ondernemingsnr:e.id,kind:"vestiging",naam:e.name,commercieleNaam:null,straat:e.address.street,huisnr:e.address.houseNumber,postcode:e.address.postalCode,gemeente:e.address.municipality,zetelOndernemingsnr:e.parentEnterpriseId,zetelElders:!!e.parent?.registeredAddress&&e.parent.registeredAddress.municipality!==e.address.municipality,longitude:point?.[0]??null,latitude:point?.[1]??null,coordinaatVerdacht:false},score:null};
 }
