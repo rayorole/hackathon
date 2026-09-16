@@ -8,7 +8,7 @@ export function searchTargets(response: {output?: Array<{action?: {sources?: Arr
  for(const ref of references) {
   if(ref.type !== 'url_citation' || !ref.url) continue;
   try {const u = new URL(ref.url); if(u.protocol !== 'https:' || u.username || u.password || u.port) continue;
-   if(/\/(companies|search|zoeken|categorie|category)\//i.test(u.pathname))continue;
+   if(/\/(companies|bedrijven|search|zoeken|categorie|category)\//i.test(u.pathname))continue;
    if(/(^|\.)(facebook|instagram|linkedin|youtube|google|bing)\./.test(u.hostname)) continue;
    u.hash=''; for(const k of [...u.searchParams.keys()])if(k.startsWith('utm_'))u.searchParams.delete(k); result.set(u.href,{url:u.href,publisher:ref.title?.slice(0,150)||u.hostname,discovered:true});
   } catch { /* Malformed references never become source targets. */ }

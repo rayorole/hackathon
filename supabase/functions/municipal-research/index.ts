@@ -620,7 +620,7 @@ function searchTargets(response) {
     try {
       const u = new URL(ref.url);
       if (u.protocol !== "https:" || u.username || u.password || u.port) continue;
-      if (/\/(companies|search|zoeken|categorie|category)\//i.test(u.pathname)) continue;
+      if (/\/(companies|bedrijven|search|zoeken|categorie|category)\//i.test(u.pathname)) continue;
       if (/(^|\.)(facebook|instagram|linkedin|youtube|google|bing)\./.test(u.hostname)) continue;
       u.hash = "";
       for (const k of [...u.searchParams.keys()]) if (k.startsWith("utm_")) u.searchParams.delete(k);
