@@ -192,6 +192,10 @@ Mirror the table from the guidance page. These exact Dutch column headers:
 
 ## 8. Conventions
 
+- Use shadcn/ui for all interface components. The web app uses preset `b3f0SOrGOO`
+  configured in `apps/web/components.json`. Reuse `apps/web/src/components/ui` and
+  semantic theme tokens instead of creating custom controls or hardcoding colors.
+
 - TypeScript strict. No `any` in `packages/core`.
 - Registry numbers are `string`. There is no exception to this.
 - Dates as ISO `YYYY-MM-DD` strings in the domain layer; format for display at the edge only.
